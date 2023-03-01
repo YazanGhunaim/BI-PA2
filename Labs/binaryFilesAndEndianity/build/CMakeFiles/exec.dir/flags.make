@@ -6,7 +6,7 @@ CXX_DEFINES =
 
 CXX_INCLUDES = 
 
-CXX_FLAGSarm64 =  -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk -Wall -Wextra -pedantic -std=c++14
+CXX_FLAGSarm64 = -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk -Wall -Wextra -pedantic -std=c++14
 
-CXX_FLAGS =  -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk -Wall -Wextra -pedantic -std=c++14
+CXX_FLAGS = -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.1.sdk -Wall -Wextra -pedantic -std=c++14
 
