@@ -1,0 +1,3 @@
+/Users/yazanghunaim/Documents/pa2/Labs/Lab1/task2/build/CMakeFiles/main.dir
+/Users/yazanghunaim/Documents/pa2/Labs/Lab1/task2/build/CMakeFiles/edit_cache.dir
+/Users/yazanghunaim/Documents/pa2/Labs/Lab1/task2/build/CMakeFiles/rebuild_cache.dir
