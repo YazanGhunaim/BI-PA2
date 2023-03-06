@@ -34,6 +34,7 @@ public:
   // printing format for one record
   string toString() const;
   bool validityCheck() const;
+  static void outputToStream(const string &file_name, ostream &out, vector<string> &targets, vector<record> &records);
 };
 
 string record::toString() const
@@ -53,7 +54,7 @@ bool record::validityCheck() const
 }
 
 // displaying all results to the output stream in the correct format
-void outputToStream(const string &file_name, ostream &out, vector<string> &targets, vector<record> &records)
+void record::outputToStream(const string &file_name, ostream &out, vector<string> &targets, vector<record> &records)
 {
   int found = 0;
   for (const auto &x : targets)
@@ -75,6 +76,16 @@ void outputToStream(const string &file_name, ostream &out, vector<string> &targe
   }
 }
 
+void readQueries(const string &fileName, ostream &out, string &line, vector<string> &queries, vector<record> &vec)
+{
+  ifstream queryFile(fileName); // create a new ifstream object to read queries
+  while (getline(queryFile, line))
+  {
+    queries.push_back(line);
+  }
+  record::outputToStream(fileName, out, queries, vec);
+}
+
 bool report(const string &fileName, ostream &out)
 {
   // correct format would be -> Name Surname ######### (9 digit phonenumber only digits and doesnt start at 0) \n
@@ -88,12 +99,7 @@ bool report(const string &fileName, ostream &out)
     {
       if (line.empty())
       {
-        ifstream queryFile(fileName); // create a new ifstream object to read queries
-        while (getline(queryFile, line))
-        {
-          queries.push_back(line);
-        }
-        outputToStream(fileName, out, queries, vec);
+        readQueries(fileName, out, line, queries, vec);
         return true;
       }
       else
@@ -101,10 +107,11 @@ bool report(const string &fileName, ostream &out)
         istringstream ss(line);
         string name, sur_name;
         string phone_number;
+        string new_line;
 
-        ss >> name >> sur_name >> phone_number;
+        ss >> name >> sur_name >> phone_number >> new_line;
         record temp(name, sur_name, phone_number);
-        if (!temp.validityCheck() || phone_number[9] || stoi(phone_number) < 0)
+        if (!temp.validityCheck() || stoi(phone_number) < 0 || !new_line.empty())
         {
           return false;
         }
@@ -140,6 +147,8 @@ int main()
   assert(report("tests/test3_in.txt", oss) == false);
   oss.str("");
   assert(report("tests/test4_in.txt", oss) == false);
+  oss.str("");
+  assert(report("tests/test5_in.txt", oss) == false);
   return 0;
 }
 #endif /* __PROGTEST__ */
