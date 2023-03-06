@@ -98,14 +98,13 @@ bool report(const string &fileName, ostream &out)
       }
       else
       {
-
         istringstream ss(line);
         string name, sur_name;
         string phone_number;
 
         ss >> name >> sur_name >> phone_number;
         record temp(name, sur_name, phone_number);
-        if (!temp.validityCheck() || phone_number[9])
+        if (!temp.validityCheck() || phone_number[9] || stoi(phone_number) < 0)
         {
           return false;
         }
@@ -137,6 +136,10 @@ int main()
   assert(report("tests/test1_in.txt", oss) == false);
   oss.str("");
   assert(report("tests/test2_in.txt", oss) == true);
+  oss.str("");
+  assert(report("tests/test3_in.txt", oss) == false);
+  oss.str("");
+  assert(report("tests/test4_in.txt", oss) == false);
   return 0;
 }
 #endif /* __PROGTEST__ */
