@@ -119,9 +119,10 @@ private:
 public:
   // initialize to empty vector
   CEFaceMask() : m_contacts{} {}
-  void addContact(const CContact &contact_details)
+  CEFaceMask& addContact(const CContact &contact_details)
   {
     m_contacts.push_back(contact_details);
+    return *this;
   }
 
   bool in_list(const vector<int> &list, int number) const
