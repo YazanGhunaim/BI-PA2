@@ -131,6 +131,30 @@ bool utf8ToFibonacci(const char *inFile, const char *outFile)
     std::cerr << "Error: no valid Unicode code points found in input file." << std::endl;
     return false;
   }
+
+  string concat;
+  for (auto &x : unicode)
+  {
+    concat += fibonacciEncoding(x);
+  }
+
+  string substr;
+
+  int i = 0;
+  while (i < concat.size())
+  {
+    substr = concat.substr(i, 8);
+    i += 8;
+
+    if (substr.size() < 8)
+    {
+      substr.append(8 - substr.size(), '0');
+    }
+
+    cout << substr << endl;
+  }
+
+  return 0;
 }
 
 bool fibonacciToUtf8(const char *inFile, const char *outFile)
