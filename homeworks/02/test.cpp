@@ -99,29 +99,34 @@ public:
 
   bool getNext(const string &name, const string &surname, string &outName, string &outSurname) const;
 
+  friend std::ostream &operator<<(std::ostream &stream, const CPersonalAgenda &db);
+
 private:
-  bool binarySearchByName(const vector<Employee> &database, const string &targetName, const string &targetSurname) const;
+  int binarySearchByName(const string &targetName, const string &targetSurname) const;
   int binarySearchNewName(const string &name, const string &sur_name) const;
   int binarySearchNewEmail(const string &email) const;
   bool unique_credentials(const string &email) const;
   bool unique_credentials(const string &name, const string &sur_name) const;
 };
 
-// private methods
-bool CPersonalAgenda::binarySearchByName(const vector<Employee> &database, const string &targetName, const string &targetSurname) const
+// ---- private methods ---- //
+
+// return index of target employee searched by name
+int CPersonalAgenda::binarySearchByName(const string &targetName, const string &targetSurname) const
 {
   int left = 0;
-  int right = database.size() - 1;
+  int right = db_sorted_by_names.size() - 1;
+  int mid;
 
   while (left <= right)
   {
-    int mid = (left + right) / 2;
+    mid = (left + right) / 2;
 
-    if (database[mid].get_name() == targetName && database[mid].get_surname() == targetSurname)
+    if (db_sorted_by_names[mid].get_name() == targetName && db_sorted_by_names[mid].get_surname() == targetSurname)
     {
-      return true;
+      return mid;
     }
-    else if (database[mid].get_name() < targetName || (database[mid].get_name() == targetName && database[mid].get_surname() < targetSurname))
+    else if (db_sorted_by_names[mid].get_name() < targetName || (db_sorted_by_names[mid].get_name() == targetName && db_sorted_by_names[mid].get_surname() < targetSurname))
     {
       // Employee is in the right half of the array
       left = mid + 1;
@@ -134,7 +139,7 @@ bool CPersonalAgenda::binarySearchByName(const vector<Employee> &database, const
   }
 
   // Employee not found
-  return false;
+  return -1;
 }
 
 // to get appropriate index to insert while maintaining order
@@ -151,7 +156,7 @@ int CPersonalAgenda::binarySearchNewName(const string &name, const string &sur_n
     {
       return -1;
     }
-    else if (db_sorted_by_names[middle].get_name() > name || (db_sorted_by_names[middle].get_name() == name && db_sorted_by_names[middle].get_surname() > sur_name))
+    else if (db_sorted_by_names[middle].get_surname() > sur_name || (db_sorted_by_names[middle].get_surname() == sur_name && db_sorted_by_names[middle].get_name() > name))
     {
       last = middle - 1;
     }
@@ -204,10 +209,10 @@ bool CPersonalAgenda::unique_credentials(const string &name, const string &sur_n
   {
     return true;
   }
-  return !binarySearchByName(db_sorted_by_names, name, sur_name);
+  return binarySearchNewName(name, sur_name) == -1 ? false : true;
 }
 
-// public methods
+// ---- public methods ---- //
 bool CPersonalAgenda::add(const string &name, const string &surname, const string &email, unsigned int salary)
 {
   bool unique_pair = unique_credentials(name, surname);
@@ -239,6 +244,49 @@ bool CPersonalAgenda::add(const string &name, const string &surname, const strin
   return true;
 }
 
+bool CPersonalAgenda::getFirst(string &outName, string &outSurname) const
+{
+  if (db_sorted_by_names.size() == 0)
+  {
+    return false;
+  }
+  outName = db_sorted_by_names[0].get_name();
+  outSurname = db_sorted_by_names[0].get_surname();
+  return true;
+}
+
+bool CPersonalAgenda::getNext(const string &name, const string &surname, string &outName, string &outSurname) const
+{
+  int target_index = binarySearchByName(name, surname);
+
+  if (target_index == -1 || target_index == db_sorted_by_names.size() - 1)
+  {
+    return false;
+  }
+
+  outName = db_sorted_by_names[target_index + 1].get_name();
+  outSurname = db_sorted_by_names[target_index + 1].get_surname();
+  return true;
+}
+
+// ---- operator overloading ---- //
+std::ostream &
+operator<<(std::ostream &stream, const CPersonalAgenda &db)
+{
+  stream << "-------NAME-SORT--------\n";
+  for (const auto &x : db.db_sorted_by_names)
+  {
+    stream << x.get_name() << " " << x.get_surname() << " " << x.get_email() << "\n";
+  }
+  stream << "-------EMAIL-SORT--------\n";
+  for (const auto &x : db.db_sorted_by_emails)
+  {
+    stream << x.get_name() << " " << x.get_surname() << " " << x.get_email() << "\n";
+  }
+  stream << endl;
+  return stream;
+}
+
 #ifndef __PROGTEST__
 int main(void)
 {
@@ -249,10 +297,10 @@ int main(void)
   assert(b1.add("John", "Smith", "john", 30000));
   assert(b1.add("John", "Miller", "johnm", 35000));
   assert(b1.add("Peter", "Smith", "peter", 23000));
-  // assert(b1.getFirst(outName, outSurname) && outName == "John" && outSurname == "Miller");
-  // assert(b1.getNext("John", "Miller", outName, outSurname) && outName == "John" && outSurname == "Smith");
-  // assert(b1.getNext("John", "Smith", outName, outSurname) && outName == "Peter" && outSurname == "Smith");
-  // assert(!b1.getNext("Peter", "Smith", outName, outSurname));
+  assert(b1.getFirst(outName, outSurname) && outName == "John" && outSurname == "Miller");
+  assert(b1.getNext("John", "Miller", outName, outSurname) && outName == "John" && outSurname == "Smith");
+  assert(b1.getNext("John", "Smith", outName, outSurname) && outName == "Peter" && outSurname == "Smith");
+  assert(!b1.getNext("Peter", "Smith", outName, outSurname));
   // assert(b1.setSalary("john", 32000));
   // assert(b1.getSalary("john") == 32000);
   // assert(b1.getSalary("John", "Smith") == 32000);
