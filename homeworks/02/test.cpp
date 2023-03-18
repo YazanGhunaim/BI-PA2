@@ -143,6 +143,7 @@ int CPersonalAgenda::binarySearchByName(const string &targetName, const string &
   return -1;
 }
 
+// return index of target employee searched by email
 int CPersonalAgenda::binarySearchByEmail(const string &email) const
 {
   int first = 0;
@@ -305,7 +306,7 @@ bool CPersonalAgenda::setSalary(const string &name, const string &surname, unsig
   }
   db_sorted_by_names[target_index_names].set_salary(salary);
 
-  int target_index_emails = binarySearchByEmail(db_sorted_by_emails[target_index_names].get_email());
+  int target_index_emails = binarySearchByEmail(db_sorted_by_names[target_index_names].get_email());
   db_sorted_by_emails[target_index_emails].set_salary(salary);
   return true;
 }
@@ -343,6 +344,63 @@ unsigned int CPersonalAgenda::getSalary(const string &email) const
   return db_sorted_by_emails[target_index].get_salary();
 }
 
+bool CPersonalAgenda::getRank(const string &name, const string &surname, int &rankMin, int &rankMax) const
+{
+  int index = binarySearchByName(name, surname);
+  if (index == -1)
+  {
+    return false;
+  }
+
+  int salary = db_sorted_by_names[index].get_salary();
+  int less_count = 0;
+  int equal_count = 0;
+
+  for (const auto &x : db_sorted_by_names)
+  {
+    if (x.get_salary() < salary)
+    {
+      less_count++;
+    }
+    if (x.get_salary() == salary)
+    {
+      equal_count++;
+    }
+  }
+
+  rankMin = less_count;
+  rankMax = less_count + equal_count - 1;
+  return true;
+}
+
+bool CPersonalAgenda::getRank(const string &email, int &rankMin, int &rankMax) const
+{
+  int index = binarySearchByEmail(email);
+  if (index == -1)
+  {
+    return false;
+  }
+
+  int salary = db_sorted_by_emails[index].get_salary();
+  int less_count = 0;
+  int equal_count = 0;
+
+  for (const auto &x : db_sorted_by_emails)
+  {
+    if (x.get_salary() < salary)
+    {
+      less_count++;
+    }
+    if (x.get_salary() == salary)
+    {
+      equal_count++;
+    }
+  }
+
+  rankMin = less_count;
+  rankMax = less_count + equal_count - 1;
+  return true;
+}
 // ---- operator overloading ---- //
 std::ostream &
 operator<<(std::ostream &stream, const CPersonalAgenda &db)
@@ -378,17 +436,17 @@ int main(void)
   assert(b1.setSalary("john", 32000));
   assert(b1.getSalary("john") == 32000);
   assert(b1.getSalary("John", "Smith") == 32000);
-  // assert(b1.getRank("John", "Smith", lo, hi) && lo == 1 && hi == 1);
-  // assert(b1.getRank("john", lo, hi) && lo == 1 && hi == 1);
-  // assert(b1.getRank("peter", lo, hi) && lo == 0 && hi == 0);
-  // assert(b1.getRank("johnm", lo, hi) && lo == 2 && hi == 2);
-  // assert(b1.setSalary("John", "Smith", 35000));
-  // assert(b1.getSalary("John", "Smith") == 35000);
-  // assert(b1.getSalary("john") == 35000);
-  // assert(b1.getRank("John", "Smith", lo, hi) && lo == 1 && hi == 2);
-  // assert(b1.getRank("john", lo, hi) && lo == 1 && hi == 2);
-  // assert(b1.getRank("peter", lo, hi) && lo == 0 && hi == 0);
-  // assert(b1.getRank("johnm", lo, hi) && lo == 1 && hi == 2);
+  assert(b1.getRank("John", "Smith", lo, hi) && lo == 1 && hi == 1);
+  assert(b1.getRank("john", lo, hi) && lo == 1 && hi == 1);
+  assert(b1.getRank("peter", lo, hi) && lo == 0 && hi == 0);
+  assert(b1.getRank("johnm", lo, hi) && lo == 2 && hi == 2);
+  assert(b1.setSalary("John", "Smith", 35000));
+  assert(b1.getSalary("John", "Smith") == 35000);
+  assert(b1.getSalary("john") == 35000);
+  assert(b1.getRank("John", "Smith", lo, hi) && lo == 1 && hi == 2);
+  assert(b1.getRank("john", lo, hi) && lo == 1 && hi == 2);
+  assert(b1.getRank("peter", lo, hi) && lo == 0 && hi == 0);
+  assert(b1.getRank("johnm", lo, hi) && lo == 1 && hi == 2);
   // assert(b1.changeName("peter", "James", "Bond"));
   // assert(b1.getSalary("peter") == 23000);
   // assert(b1.getSalary("James", "Bond") == 23000);
