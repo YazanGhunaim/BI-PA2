@@ -103,6 +103,7 @@ public:
 
 private:
   int binarySearchByName(const string &targetName, const string &targetSurname) const;
+  int binarySearchByEmail(const string &email) const;
   int binarySearchNewName(const string &name, const string &sur_name) const;
   int binarySearchNewEmail(const string &email) const;
   bool unique_credentials(const string &email) const;
@@ -139,6 +140,31 @@ int CPersonalAgenda::binarySearchByName(const string &targetName, const string &
   }
 
   // Employee not found
+  return -1;
+}
+
+int CPersonalAgenda::binarySearchByEmail(const string &email) const
+{
+  int first = 0;
+  int last = db_sorted_by_emails.size() - 1;
+  int middle;
+
+  while (first <= last)
+  {
+    middle = first + (last - first) / 2;
+    if (db_sorted_by_emails[middle].get_email() == email)
+    {
+      return middle;
+    }
+    else if (db_sorted_by_emails[middle].get_email() > email)
+    {
+      last = middle - 1;
+    }
+    else
+    {
+      first = middle + 1;
+    }
+  }
   return -1;
 }
 
@@ -213,6 +239,7 @@ bool CPersonalAgenda::unique_credentials(const string &name, const string &sur_n
 }
 
 // ---- public methods ---- //
+
 bool CPersonalAgenda::add(const string &name, const string &surname, const string &email, unsigned int salary)
 {
   bool unique_pair = unique_credentials(name, surname);
@@ -269,6 +296,53 @@ bool CPersonalAgenda::getNext(const string &name, const string &surname, string 
   return true;
 }
 
+bool CPersonalAgenda::setSalary(const string &name, const string &surname, unsigned int salary)
+{
+  int target_index_names = binarySearchByName(name, surname);
+  if (target_index_names == -1)
+  {
+    return false;
+  }
+  db_sorted_by_names[target_index_names].set_salary(salary);
+
+  int target_index_emails = binarySearchByEmail(db_sorted_by_emails[target_index_names].get_email());
+  db_sorted_by_emails[target_index_emails].set_salary(salary);
+  return true;
+}
+
+bool CPersonalAgenda::setSalary(const string &email, unsigned int salary)
+{
+  int target_index_emails = binarySearchByEmail(email);
+  if (target_index_emails == -1)
+  {
+    return false;
+  }
+  db_sorted_by_emails[target_index_emails].set_salary(salary);
+  int target_index_names = binarySearchByName(db_sorted_by_emails[target_index_emails].get_name(), db_sorted_by_emails[target_index_emails].get_surname());
+  db_sorted_by_names[target_index_names].set_salary(salary);
+  return true;
+}
+
+unsigned int CPersonalAgenda::getSalary(const string &name, const string &surname) const
+{
+  int target_index = binarySearchByName(name, surname);
+  if (target_index == -1)
+  {
+    return 0;
+  }
+  return db_sorted_by_names[target_index].get_salary();
+}
+
+unsigned int CPersonalAgenda::getSalary(const string &email) const
+{
+  int target_index = binarySearchByEmail(email);
+  if (target_index == -1)
+  {
+    return 0;
+  }
+  return db_sorted_by_emails[target_index].get_salary();
+}
+
 // ---- operator overloading ---- //
 std::ostream &
 operator<<(std::ostream &stream, const CPersonalAgenda &db)
@@ -276,12 +350,12 @@ operator<<(std::ostream &stream, const CPersonalAgenda &db)
   stream << "-------NAME-SORT--------\n";
   for (const auto &x : db.db_sorted_by_names)
   {
-    stream << x.get_name() << " " << x.get_surname() << " " << x.get_email() << "\n";
+    stream << x.get_name() << " " << x.get_surname() << " " << x.get_email() << " " << x.get_salary() << "\n";
   }
   stream << "-------EMAIL-SORT--------\n";
   for (const auto &x : db.db_sorted_by_emails)
   {
-    stream << x.get_name() << " " << x.get_surname() << " " << x.get_email() << "\n";
+    stream << x.get_name() << " " << x.get_surname() << " " << x.get_email() << " " << x.get_salary() << "\n";
   }
   stream << endl;
   return stream;
@@ -301,9 +375,9 @@ int main(void)
   assert(b1.getNext("John", "Miller", outName, outSurname) && outName == "John" && outSurname == "Smith");
   assert(b1.getNext("John", "Smith", outName, outSurname) && outName == "Peter" && outSurname == "Smith");
   assert(!b1.getNext("Peter", "Smith", outName, outSurname));
-  // assert(b1.setSalary("john", 32000));
-  // assert(b1.getSalary("john") == 32000);
-  // assert(b1.getSalary("John", "Smith") == 32000);
+  assert(b1.setSalary("john", 32000));
+  assert(b1.getSalary("john") == 32000);
+  assert(b1.getSalary("John", "Smith") == 32000);
   // assert(b1.getRank("John", "Smith", lo, hi) && lo == 1 && hi == 1);
   // assert(b1.getRank("john", lo, hi) && lo == 1 && hi == 1);
   // assert(b1.getRank("peter", lo, hi) && lo == 0 && hi == 0);
