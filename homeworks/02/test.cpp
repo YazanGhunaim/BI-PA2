@@ -432,7 +432,7 @@ bool CPersonalAgenda::del(const string &email)
   {
     return false;
   }
-  int index_names = binarySearchByName(db_sorted_by_names[index].get_name(), db_sorted_by_names[index].get_surname());
+  int index_names = binarySearchByName(db_sorted_by_emails[index].get_name(), db_sorted_by_emails[index].get_surname());
   db_sorted_by_names.erase(db_sorted_by_names.begin() + index_names);
   db_sorted_by_emails.erase(db_sorted_by_emails.begin() + index);
   return true;
