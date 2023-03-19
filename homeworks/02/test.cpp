@@ -108,6 +108,8 @@ private:
   int binarySearchNewEmail(const string &email) const;
   bool unique_credentials(const string &email) const;
   bool unique_credentials(const string &name, const string &sur_name) const;
+  static bool cmpEmail(const Employee &a, const Employee &b);
+  static bool cmpName(const Employee &a, const Employee &b);
 };
 
 // ---- private methods ---- //
@@ -115,31 +117,26 @@ private:
 // return index of target employee searched by name
 int CPersonalAgenda::binarySearchByName(const string &targetName, const string &targetSurname) const
 {
-  int left = 0;
-  int right = db_sorted_by_names.size() - 1;
-  int mid;
+  int first = 0;
+  int last = db_sorted_by_names.size() - 1;
+  int middle;
 
-  while (left <= right)
+  while (first <= last)
   {
-    mid = (left + right) / 2;
-
-    if (db_sorted_by_names[mid].get_name() == targetName && db_sorted_by_names[mid].get_surname() == targetSurname)
+    middle = first + (last - first) / 2;
+    if (db_sorted_by_names[middle].compare_names(targetName, targetSurname))
     {
-      return mid;
+      return middle;
     }
-    else if (db_sorted_by_names[mid].get_name() < targetName || (db_sorted_by_names[mid].get_name() == targetName && db_sorted_by_names[mid].get_surname() < targetSurname))
+    else if (db_sorted_by_names[middle].get_surname() > targetSurname || (db_sorted_by_names[middle].get_surname() == targetSurname && db_sorted_by_names[middle].get_name() > targetName))
     {
-      // Employee is in the right half of the array
-      left = mid + 1;
+      last = middle - 1;
     }
     else
     {
-      // Employee is in the left half of the array
-      right = mid - 1;
+      first = middle + 1;
     }
   }
-
-  // Employee not found
   return -1;
 }
 
@@ -239,16 +236,29 @@ bool CPersonalAgenda::unique_credentials(const string &name, const string &sur_n
   return binarySearchNewName(name, sur_name) == -1 ? false : true;
 }
 
+bool CPersonalAgenda::cmpEmail(const Employee &a, const Employee &b)
+{
+  return a.get_email() < b.get_email();
+}
+
+bool CPersonalAgenda::cmpName(const Employee &a, const Employee &b)
+{
+  if (a.get_surname() != b.get_surname())
+  {
+    return a.get_surname() < b.get_surname();
+  }
+  else
+  {
+    return a.get_name() < b.get_name();
+  }
+}
+
 // ---- public methods ---- //
 
 bool CPersonalAgenda::add(const string &name, const string &surname, const string &email, unsigned int salary)
 {
-  bool unique_pair = unique_credentials(name, surname);
-  bool unique_email = unique_credentials(email);
-
-  if (!unique_pair || !unique_email)
+  if (!unique_credentials(name, surname) || !unique_credentials(email))
   {
-    cout << boolalpha << unique_pair << unique_email << endl;
     return false;
   }
 
@@ -287,7 +297,7 @@ bool CPersonalAgenda::getNext(const string &name, const string &surname, string 
 {
   int target_index = binarySearchByName(name, surname);
 
-  if (target_index == -1 || target_index == db_sorted_by_names.size() - 1)
+  if (target_index == -1 || target_index == (int)db_sorted_by_names.size() - 1)
   {
     return false;
   }
@@ -352,7 +362,7 @@ bool CPersonalAgenda::getRank(const string &name, const string &surname, int &ra
     return false;
   }
 
-  int salary = db_sorted_by_names[index].get_salary();
+  unsigned salary = db_sorted_by_names[index].get_salary();
   int less_count = 0;
   int equal_count = 0;
 
@@ -381,7 +391,7 @@ bool CPersonalAgenda::getRank(const string &email, int &rankMin, int &rankMax) c
     return false;
   }
 
-  int salary = db_sorted_by_emails[index].get_salary();
+  unsigned salary = db_sorted_by_emails[index].get_salary();
   int less_count = 0;
   int equal_count = 0;
 
@@ -401,6 +411,76 @@ bool CPersonalAgenda::getRank(const string &email, int &rankMin, int &rankMax) c
   rankMax = less_count + equal_count - 1;
   return true;
 }
+
+bool CPersonalAgenda::del(const string &name, const string &surname)
+{
+  int index = binarySearchByName(name, surname);
+  if (index == -1)
+  {
+    return false;
+  }
+  int index_emails = binarySearchByEmail(db_sorted_by_names[index].get_email());
+  db_sorted_by_names.erase(db_sorted_by_names.begin() + index);
+  db_sorted_by_emails.erase(db_sorted_by_emails.begin() + index_emails);
+  return true;
+}
+
+bool CPersonalAgenda::del(const string &email)
+{
+  int index = binarySearchByEmail(email);
+  if (index == -1)
+  {
+    return false;
+  }
+  int index_names = binarySearchByName(db_sorted_by_names[index].get_name(), db_sorted_by_names[index].get_surname());
+  db_sorted_by_names.erase(db_sorted_by_names.begin() + index_names);
+  db_sorted_by_emails.erase(db_sorted_by_emails.begin() + index);
+  return true;
+}
+
+bool CPersonalAgenda::changeName(const string &email, const string &newName, const string &newSurname)
+{
+  if (!unique_credentials(newName, newSurname))
+  {
+    return false;
+  }
+
+  int index = binarySearchByEmail(email);
+  // if employee wasnt found
+  if (index == -1)
+  {
+    return false;
+  }
+  int index_names = binarySearchByName(db_sorted_by_emails[index].get_name(), db_sorted_by_emails[index].get_surname());
+  db_sorted_by_emails[index].change_name(newName, newSurname);
+  db_sorted_by_names[index_names].change_name(newName, newSurname);
+  sort(db_sorted_by_names.begin(), db_sorted_by_names.end(), cmpName);
+  sort(db_sorted_by_emails.begin(), db_sorted_by_emails.end(), cmpEmail);
+  return true;
+}
+
+bool CPersonalAgenda::changeEmail(const string &name, const string &surname, const string &newEmail)
+{
+  if (!unique_credentials(newEmail))
+  {
+    return false;
+  }
+
+  int index = binarySearchByName(name, surname);
+
+  // if employee wasnt found
+  if (index == -1)
+  {
+    return false;
+  }
+  int index_emails = binarySearchByEmail(db_sorted_by_names[index].get_email());
+  db_sorted_by_emails[index_emails].change_email(newEmail);
+  db_sorted_by_names[index].change_email(newEmail);
+  sort(db_sorted_by_names.begin(), db_sorted_by_names.end(), cmpName);
+  sort(db_sorted_by_emails.begin(), db_sorted_by_emails.end(), cmpEmail);
+  return true;
+}
+
 // ---- operator overloading ---- //
 std::ostream &
 operator<<(std::ostream &stream, const CPersonalAgenda &db)
@@ -447,66 +527,66 @@ int main(void)
   assert(b1.getRank("john", lo, hi) && lo == 1 && hi == 2);
   assert(b1.getRank("peter", lo, hi) && lo == 0 && hi == 0);
   assert(b1.getRank("johnm", lo, hi) && lo == 1 && hi == 2);
-  // assert(b1.changeName("peter", "James", "Bond"));
-  // assert(b1.getSalary("peter") == 23000);
-  // assert(b1.getSalary("James", "Bond") == 23000);
-  // assert(b1.getSalary("Peter", "Smith") == 0);
-  // assert(b1.getFirst(outName, outSurname) && outName == "James" && outSurname == "Bond");
-  // assert(b1.getNext("James", "Bond", outName, outSurname) && outName == "John" && outSurname == "Miller");
-  // assert(b1.getNext("John", "Miller", outName, outSurname) && outName == "John" && outSurname == "Smith");
-  // assert(!b1.getNext("John", "Smith", outName, outSurname));
-  // assert(b1.changeEmail("James", "Bond", "james"));
-  // assert(b1.getSalary("James", "Bond") == 23000);
-  // assert(b1.getSalary("james") == 23000);
-  // assert(b1.getSalary("peter") == 0);
-  // assert(b1.del("james"));
-  // assert(b1.getRank("john", lo, hi) && lo == 0 && hi == 1);
-  // assert(b1.del("John", "Miller"));
-  // assert(b1.getRank("john", lo, hi) && lo == 0 && hi == 0);
-  // assert(b1.getFirst(outName, outSurname) && outName == "John" && outSurname == "Smith");
-  // assert(!b1.getNext("John", "Smith", outName, outSurname));
-  // assert(b1.del("john"));
-  // assert(!b1.getFirst(outName, outSurname));
-  // assert(b1.add("John", "Smith", "john", 31000));
-  // assert(b1.add("john", "Smith", "joHn", 31000));
-  // assert(b1.add("John", "smith", "jOhn", 31000));
+  assert(b1.changeName("peter", "James", "Bond"));
+  assert(b1.getSalary("peter") == 23000);
+  assert(b1.getSalary("James", "Bond") == 23000);
+  assert(b1.getSalary("Peter", "Smith") == 0);
+  assert(b1.getFirst(outName, outSurname) && outName == "James" && outSurname == "Bond");
+  assert(b1.getNext("James", "Bond", outName, outSurname) && outName == "John" && outSurname == "Miller");
+  assert(b1.getNext("John", "Miller", outName, outSurname) && outName == "John" && outSurname == "Smith");
+  assert(!b1.getNext("John", "Smith", outName, outSurname));
+  assert(b1.changeEmail("James", "Bond", "james"));
+  assert(b1.getSalary("James", "Bond") == 23000);
+  assert(b1.getSalary("james") == 23000);
+  assert(b1.getSalary("peter") == 0);
+  assert(b1.del("james"));
+  assert(b1.getRank("john", lo, hi) && lo == 0 && hi == 1);
+  assert(b1.del("John", "Miller"));
+  assert(b1.getRank("john", lo, hi) && lo == 0 && hi == 0);
+  assert(b1.getFirst(outName, outSurname) && outName == "John" && outSurname == "Smith");
+  assert(!b1.getNext("John", "Smith", outName, outSurname));
+  assert(b1.del("john"));
+  assert(!b1.getFirst(outName, outSurname));
+  assert(b1.add("John", "Smith", "john", 31000));
+  assert(b1.add("john", "Smith", "joHn", 31000));
+  assert(b1.add("John", "smith", "jOhn", 31000));
 
-  // CPersonalAgenda b2;
-  // assert(!b2.getFirst(outName, outSurname));
-  // assert(b2.add("James", "Bond", "james", 70000));
-  // assert(b2.add("James", "Smith", "james2", 30000));
-  // assert(b2.add("Peter", "Smith", "peter", 40000));
-  // assert(!b2.add("James", "Bond", "james3", 60000));
-  // assert(!b2.add("Peter", "Bond", "peter", 50000));
-  // assert(!b2.changeName("joe", "Joe", "Black"));
-  // assert(!b2.changeEmail("Joe", "Black", "joe"));
-  // assert(!b2.setSalary("Joe", "Black", 90000));
-  // assert(!b2.setSalary("joe", 90000));
-  // assert(b2.getSalary("Joe", "Black") == 0);
-  // assert(b2.getSalary("joe") == 0);
-  // assert(!b2.getRank("Joe", "Black", lo, hi));
-  // assert(!b2.getRank("joe", lo, hi));
-  // assert(!b2.changeName("joe", "Joe", "Black"));
-  // assert(!b2.changeEmail("Joe", "Black", "joe"));
-  // assert(!b2.del("Joe", "Black"));
-  // assert(!b2.del("joe"));
-  // assert(!b2.changeName("james2", "James", "Bond"));
-  // assert(!b2.changeEmail("Peter", "Smith", "james"));
-  // assert(!b2.changeName("peter", "Peter", "Smith"));
-  // assert(!b2.changeEmail("Peter", "Smith", "peter"));
-  // assert(b2.del("Peter", "Smith"));
-  // assert(!b2.changeEmail("Peter", "Smith", "peter2"));
-  // assert(!b2.setSalary("Peter", "Smith", 35000));
-  // assert(b2.getSalary("Peter", "Smith") == 0);
-  // assert(!b2.getRank("Peter", "Smith", lo, hi));
-  // assert(!b2.changeName("peter", "Peter", "Falcon"));
-  // assert(!b2.setSalary("peter", 37000));
-  // assert(b2.getSalary("peter") == 0);
-  // assert(!b2.getRank("peter", lo, hi));
-  // assert(!b2.del("Peter", "Smith"));
-  // assert(!b2.del("peter"));
-  // assert(b2.add("Peter", "Smith", "peter", 40000));
-  // assert(b2.getSalary("peter") == 40000);
+  CPersonalAgenda b2;
+  assert(!b2.getFirst(outName, outSurname));
+  assert(b2.add("James", "Bond", "james", 70000));
+  assert(b2.add("James", "Smith", "james2", 30000));
+  assert(b2.add("Peter", "Smith", "peter", 40000));
+  assert(!b2.add("James", "Bond", "james3", 60000));
+  assert(!b2.add("Peter", "Bond", "peter", 50000));
+  assert(!b2.changeName("joe", "Joe", "Black"));
+  assert(!b2.changeEmail("Joe", "Black", "joe"));
+  assert(!b2.setSalary("Joe", "Black", 90000));
+  assert(!b2.setSalary("joe", 90000));
+  assert(b2.getSalary("Joe", "Black") == 0);
+  assert(b2.getSalary("joe") == 0);
+  assert(!b2.getRank("Joe", "Black", lo, hi));
+  assert(!b2.getRank("joe", lo, hi));
+  assert(!b2.changeName("joe", "Joe", "Black"));
+  assert(!b2.changeEmail("Joe", "Black", "joe"));
+  assert(!b2.del("Joe", "Black"));
+  assert(!b2.del("joe"));
+  assert(!b2.changeName("james2", "James", "Bond"));
+  assert(!b2.changeEmail("Peter", "Smith", "james"));
+  assert(!b2.changeName("peter", "Peter", "Smith"));
+  assert(!b2.changeEmail("Peter", "Smith", "peter"));
+  assert(b2.del("Peter", "Smith"));
+  assert(!b2.changeEmail("Peter", "Smith", "peter2"));
+  assert(!b2.setSalary("Peter", "Smith", 35000));
+  assert(b2.getSalary("Peter", "Smith") == 0);
+  assert(!b2.getRank("Peter", "Smith", lo, hi));
+  assert(!b2.changeName("peter", "Peter", "Falcon"));
+  assert(!b2.setSalary("peter", 37000));
+  assert(b2.getSalary("peter") == 0);
+  assert(!b2.getRank("peter", lo, hi));
+  assert(!b2.del("Peter", "Smith"));
+  assert(!b2.del("peter"));
+  assert(b2.add("Peter", "Smith", "peter", 40000));
+  assert(b2.getSalary("peter") == 40000);
 
   return EXIT_SUCCESS;
 }
