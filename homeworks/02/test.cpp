@@ -455,7 +455,6 @@ bool CPersonalAgenda::changeName(const string &email, const string &newName, con
   db_sorted_by_emails[index].change_name(newName, newSurname);
   db_sorted_by_names[index_names].change_name(newName, newSurname);
   sort(db_sorted_by_names.begin(), db_sorted_by_names.end(), cmpName);
-  sort(db_sorted_by_emails.begin(), db_sorted_by_emails.end(), cmpEmail);
   return true;
 }
 
@@ -476,7 +475,7 @@ bool CPersonalAgenda::changeEmail(const string &name, const string &surname, con
   int index_emails = binarySearchByEmail(db_sorted_by_names[index].get_email());
   db_sorted_by_emails[index_emails].change_email(newEmail);
   db_sorted_by_names[index].change_email(newEmail);
-  sort(db_sorted_by_names.begin(), db_sorted_by_names.end(), cmpName);
+
   sort(db_sorted_by_emails.begin(), db_sorted_by_emails.end(), cmpEmail);
   return true;
 }
