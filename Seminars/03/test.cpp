@@ -47,35 +47,21 @@ public:
     // arithmetic operators
     CTime operator+(int sec) const
     {
-        int new_seconds = m_Second + sec;
-        int carry = new_seconds / 60;
-        new_seconds %= 60;
-
-        int new_mins = carry + m_Minute;
-        carry = new_mins / 60;
-        new_mins %= 60;
-
-        int new_hours = m_Hour + carry;
-        new_hours %= 24;
-
-        return CTime(new_hours, new_mins, new_seconds);
+        int total_minutes_added = (sec + m_Second) / 60;
+        int total_minutes = m_Hour * 60 + m_Minute + total_minutes_added;
+        int hour = total_minutes / 60;
+        int minutes = total_minutes % 60;
+        int seconds = (sec + m_Second) % 60;
+        return CTime(hour, minutes, seconds);
     }
     CTime &operator+=(int sec)
     {
-        int new_seconds = m_Second + sec;
-        int carry = new_seconds / 60;
-        m_Second = new_seconds % 60;
-
-        int newMinutes = m_Minute + carry;
-        carry = newMinutes / 60;
-        m_Minute = newMinutes % 60;
-
-        m_Hour = (m_Hour + carry) % 24;
+        *this = *this + sec;
         return *this;
     }
-    CTime operator-(int seconds) const
+    CTime operator-(int sec) const
     {
-        int total_seconds = m_Hour * 3600 + m_Minute * 60 + m_Second - seconds;
+        int total_seconds = m_Hour * 3600 + m_Minute * 60 + m_Second - sec;
         if (total_seconds < 0)
         {
             total_seconds += 86400; // add a day's worth of seconds
@@ -88,15 +74,7 @@ public:
     }
     CTime &operator-=(int seconds)
     {
-        int total_seconds = m_Hour * 3600 + m_Minute * 60 + m_Second - seconds;
-        if (total_seconds < 0)
-        {
-            total_seconds += 86400; // add a day's worth of seconds
-        }
-        m_Hour = total_seconds / 3600 % 24;
-        int remaining_seconds = total_seconds % 3600;
-        m_Minute = remaining_seconds / 60;
-        m_Second = remaining_seconds % 60;
+        *this = *this - seconds;
         return *this;
     }
     int operator-(const CTime &other) const
@@ -121,13 +99,13 @@ public:
         return (*this -= 1);
     }
     // postfix
-    CTime operator++(int)
+    CTime operator++(int _)
     {
         CTime temp{*this};
         ++*this;
         return temp;
     }
-    CTime operator--(int)
+    CTime operator--(int _)
     {
         CTime temp{*this};
         --*this;
