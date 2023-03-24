@@ -49,7 +49,7 @@ public:
     {
         int total_minutes_added = (sec + m_Second) / 60;
         int total_minutes = m_Hour * 60 + m_Minute + total_minutes_added;
-        int hour = total_minutes / 60;
+        int hour = (total_minutes / 60) % 24;
         int minutes = total_minutes % 60;
         int seconds = (sec + m_Second) % 60;
         return CTime(hour, minutes, seconds);
@@ -66,9 +66,9 @@ public:
         {
             total_seconds += 86400; // add a day's worth of seconds
         }
-        int new_hours = total_seconds / 3600;
+        int new_hours = (total_seconds / 3600) % 24;
         int remaining_seconds = total_seconds % 3600;
-        int new_minutes = remaining_seconds / 60;
+        int new_minutes = (remaining_seconds / 60) % 60;
         int new_seconds = remaining_seconds % 60;
         return CTime(new_hours, new_minutes, new_seconds);
     }
