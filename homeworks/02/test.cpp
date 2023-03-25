@@ -27,6 +27,7 @@ private:
 public:
   // constructor
   Employee(string name, string surname, string email, unsigned salary) : m_name(move(name)), m_surname(move(surname)), m_email(move(email)), m_salary(salary) {}
+  ~Employee(void) {}
   void change_name(const string &new_name, const string &new_surname)
   {
     m_name = new_name;
@@ -44,11 +45,11 @@ public:
   {
     return m_salary;
   }
-  string get_name() const
+  const string &get_name() const
   {
     return m_name;
   }
-  string get_surname() const
+  const string &get_surname() const
   {
     return m_surname;
   }
@@ -65,13 +66,20 @@ public:
 class CPersonalAgenda
 {
 private:
-  vector<Employee> db_sorted_by_names;
-  vector<Employee> db_sorted_by_emails;
+  vector<Employee *> db_sorted_by_names;
+  vector<Employee *> db_sorted_by_emails;
+  vector<unsigned> db_sorted_by_salary;
 
 public:
   CPersonalAgenda(void) {}
 
-  ~CPersonalAgenda(void) {}
+  ~CPersonalAgenda(void)
+  {
+    for (auto ptr : db_sorted_by_names)
+    {
+      delete ptr;
+    }
+  }
 
   bool add(const string &name, const string &surname, const string &email, unsigned int salary);
 
@@ -102,120 +110,56 @@ public:
   friend std::ostream &operator<<(std::ostream &stream, const CPersonalAgenda &db);
 
 private:
-  int binarySearchByName(const string &targetName, const string &targetSurname) const;
-  int binarySearchByEmail(const string &email) const;
-  int binarySearchNewName(const string &name, const string &sur_name) const;
+  int binarySearchNewName(const string &name, const string &surname) const;
   int binarySearchNewEmail(const string &email) const;
+  int binarySearchNewSalary(unsigned salary) const;
+  bool binarySearchByName(const string &name, const string &sur_name) const;
+  bool binarySearchByEmail(const string &email) const;
   bool unique_credentials(const string &email) const;
   bool unique_credentials(const string &name, const string &sur_name) const;
-  static bool cmpEmail(const Employee &a, const Employee &b);
-  static bool cmpName(const Employee &a, const Employee &b);
 };
 
 // ---- private methods ---- //
 
-// return index of target employee searched by name
-int CPersonalAgenda::binarySearchByName(const string &targetName, const string &targetSurname) const
+// returns the appropriate index to insert a new employee to maintain a by name sort
+int CPersonalAgenda::binarySearchNewName(const string &name, const string &surname) const
 {
-  int first = 0;
-  int last = db_sorted_by_names.size() - 1;
-  int middle;
-
-  while (first <= last)
-  {
-    middle = first + (last - first) / 2;
-    if (db_sorted_by_names[middle].compare_names(targetName, targetSurname))
-    {
-      return middle;
-    }
-    else if (db_sorted_by_names[middle].get_surname() > targetSurname || (db_sorted_by_names[middle].get_surname() == targetSurname && db_sorted_by_names[middle].get_name() > targetName))
-    {
-      last = middle - 1;
-    }
-    else
-    {
-      first = middle + 1;
-    }
-  }
-  return -1;
+  Employee target{name, surname, "", 0};
+  auto it = std::lower_bound(db_sorted_by_names.begin(), db_sorted_by_names.end(), &target, [](const Employee *a, const Employee *b)
+                             { return std::tie(a->get_surname(), a->get_name()) < std::tie(b->get_surname(), b->get_name()); });
+  return it - db_sorted_by_names.begin();
 }
 
-// return index of target employee searched by email
-int CPersonalAgenda::binarySearchByEmail(const string &email) const
-{
-  int first = 0;
-  int last = db_sorted_by_emails.size() - 1;
-  int middle;
-
-  while (first <= last)
-  {
-    middle = first + (last - first) / 2;
-    if (db_sorted_by_emails[middle].get_email() == email)
-    {
-      return middle;
-    }
-    else if (db_sorted_by_emails[middle].get_email() > email)
-    {
-      last = middle - 1;
-    }
-    else
-    {
-      first = middle + 1;
-    }
-  }
-  return -1;
-}
-
-// to get appropriate index to insert while maintaining order
-int CPersonalAgenda::binarySearchNewName(const string &name, const string &sur_name) const
-{
-  int first = 0;
-  int last = db_sorted_by_names.size() - 1;
-  int middle;
-
-  while (first <= last)
-  {
-    middle = first + (last - first) / 2;
-    if (db_sorted_by_names[middle].compare_names(name, sur_name))
-    {
-      return -1;
-    }
-    else if (db_sorted_by_names[middle].get_surname() > sur_name || (db_sorted_by_names[middle].get_surname() == sur_name && db_sorted_by_names[middle].get_name() > name))
-    {
-      last = middle - 1;
-    }
-    else
-    {
-      first = middle + 1;
-    }
-  }
-  return first;
-}
-
-// to get appropriate index to insert while maintaining order
+// returns the appropriate index to insert a new employee to maintain a by email sort
 int CPersonalAgenda::binarySearchNewEmail(const string &email) const
 {
-  int first = 0;
-  int last = db_sorted_by_emails.size() - 1;
-  int middle;
+  Employee target{"", "", email, 0};
+  auto it = std::lower_bound(db_sorted_by_emails.begin(), db_sorted_by_emails.end(), &target, [](const Employee *a, const Employee *b)
+                             { return a->get_email() < b->get_email(); });
+  return it - db_sorted_by_emails.begin();
+}
 
-  while (first <= last)
-  {
-    middle = first + (last - first) / 2;
-    if (db_sorted_by_emails[middle].get_email() == email)
-    {
-      return -1;
-    }
-    else if (db_sorted_by_emails[middle].get_email() > email)
-    {
-      last = middle - 1;
-    }
-    else
-    {
-      first = middle + 1;
-    }
-  }
-  return first;
+int CPersonalAgenda::binarySearchNewSalary(unsigned salary) const
+{
+  auto it = std::lower_bound(db_sorted_by_salary.begin(), db_sorted_by_salary.end(), salary, [](const unsigned &a, const unsigned &b)
+                             { return a < b; });
+  return it - db_sorted_by_salary.begin();
+}
+
+// Employee exists or not check
+bool CPersonalAgenda::binarySearchByName(const string &name, const string &sur_name) const
+{
+  Employee target{name, sur_name, "", 0};
+  return std::binary_search(db_sorted_by_names.begin(), db_sorted_by_names.end(), &target, [](const Employee *a, const Employee *b)
+                            { return std::tie(a->get_surname(), a->get_name()) < std::tie(b->get_surname(), b->get_name()); });
+}
+
+// Employee exists or not check
+bool CPersonalAgenda::binarySearchByEmail(const string &email) const
+{
+  Employee target{"", "", email, 0};
+  return std::binary_search(db_sorted_by_emails.begin(), db_sorted_by_emails.end(), &target, [](const Employee *a, const Employee *b)
+                            { return a->get_email() < b->get_email(); });
 }
 
 bool CPersonalAgenda::unique_credentials(const string &email) const
@@ -224,7 +168,7 @@ bool CPersonalAgenda::unique_credentials(const string &email) const
   {
     return true;
   }
-  return binarySearchNewEmail(email) == -1 ? false : true;
+  return !binarySearchByEmail(email);
 }
 
 bool CPersonalAgenda::unique_credentials(const string &name, const string &sur_name) const
@@ -233,24 +177,7 @@ bool CPersonalAgenda::unique_credentials(const string &name, const string &sur_n
   {
     return true;
   }
-  return binarySearchNewName(name, sur_name) == -1 ? false : true;
-}
-
-bool CPersonalAgenda::cmpEmail(const Employee &a, const Employee &b)
-{
-  return a.get_email() < b.get_email();
-}
-
-bool CPersonalAgenda::cmpName(const Employee &a, const Employee &b)
-{
-  if (a.get_surname() != b.get_surname())
-  {
-    return a.get_surname() < b.get_surname();
-  }
-  else
-  {
-    return a.get_name() < b.get_name();
-  }
+  return !binarySearchByName(name, sur_name);
 }
 
 // ---- public methods ---- //
@@ -262,23 +189,26 @@ bool CPersonalAgenda::add(const string &name, const string &surname, const strin
     return false;
   }
 
+  Employee *emp = new Employee(name, surname, email, salary);
   if (db_sorted_by_names.size() == 0)
   {
-    Employee emp(name, surname, email, salary);
     db_sorted_by_names.push_back(emp);
     db_sorted_by_emails.push_back(emp);
+    db_sorted_by_salary.push_back(salary);
     return true;
   }
 
   auto it1 = db_sorted_by_names.begin();
   auto it2 = db_sorted_by_emails.begin();
-  int posName = binarySearchNewName(name, surname);
-  int posEmail = binarySearchNewEmail(email);
+  auto it3 = db_sorted_by_salary.begin();
 
-  Employee emp(name, surname, email, salary);
-  db_sorted_by_names.insert(it1 + posName, emp);
-  db_sorted_by_emails.insert(it2 + posEmail, emp);
+  int pos_name = binarySearchNewName(name, surname);
+  int pos_email = binarySearchNewEmail(email);
+  int pos_salary = binarySearchNewSalary(salary);
 
+  db_sorted_by_names.insert(it1 + pos_name, emp);
+  db_sorted_by_emails.insert(it2 + pos_email, emp);
+  db_sorted_by_salary.insert(it3 + pos_salary, salary);
   return true;
 }
 
@@ -288,96 +218,95 @@ bool CPersonalAgenda::getFirst(string &outName, string &outSurname) const
   {
     return false;
   }
-  outName = db_sorted_by_names[0].get_name();
-  outSurname = db_sorted_by_names[0].get_surname();
+  outName = db_sorted_by_names[0]->get_name();
+  outSurname = db_sorted_by_names[0]->get_surname();
   return true;
 }
 
 bool CPersonalAgenda::getNext(const string &name, const string &surname, string &outName, string &outSurname) const
 {
-  int target_index = binarySearchByName(name, surname);
-
-  if (target_index == -1 || target_index == (int)db_sorted_by_names.size() - 1)
+  int target_index = binarySearchNewName(name, surname);
+  if (!binarySearchByName(name, surname) || target_index == (int)db_sorted_by_names.size() - 1)
   {
     return false;
   }
 
-  outName = db_sorted_by_names[target_index + 1].get_name();
-  outSurname = db_sorted_by_names[target_index + 1].get_surname();
+  outName = db_sorted_by_names[target_index + 1]->get_name();
+  outSurname = db_sorted_by_names[target_index + 1]->get_surname();
   return true;
 }
 
 bool CPersonalAgenda::setSalary(const string &name, const string &surname, unsigned int salary)
 {
-  int target_index_names = binarySearchByName(name, surname);
-  if (target_index_names == -1)
+  if (!binarySearchByName(name, surname))
   {
     return false;
   }
-  db_sorted_by_names[target_index_names].set_salary(salary);
 
-  int target_index_emails = binarySearchByEmail(db_sorted_by_names[target_index_names].get_email());
-  db_sorted_by_emails[target_index_emails].set_salary(salary);
+  int target_index = binarySearchNewName(name, surname);
+  int delete_index = binarySearchNewSalary(db_sorted_by_names[target_index]->get_salary());
+
+  db_sorted_by_salary.erase(db_sorted_by_salary.begin() + delete_index);
+
+  int insert_index = binarySearchNewSalary(salary);
+  db_sorted_by_salary.insert(db_sorted_by_salary.begin() + insert_index, salary);
+  db_sorted_by_names[target_index]->set_salary(salary);
   return true;
 }
 
 bool CPersonalAgenda::setSalary(const string &email, unsigned int salary)
 {
-  int target_index_emails = binarySearchByEmail(email);
-  if (target_index_emails == -1)
+  if (!binarySearchByEmail(email))
   {
     return false;
   }
-  db_sorted_by_emails[target_index_emails].set_salary(salary);
-  int target_index_names = binarySearchByName(db_sorted_by_emails[target_index_emails].get_name(), db_sorted_by_emails[target_index_emails].get_surname());
-  db_sorted_by_names[target_index_names].set_salary(salary);
+  int target_index = binarySearchNewEmail(email);
+  int delete_index = binarySearchNewSalary(db_sorted_by_emails[target_index]->get_salary());
+
+  db_sorted_by_salary.erase(db_sorted_by_salary.begin() + delete_index);
+
+  int insert_index = binarySearchNewSalary(salary);
+  db_sorted_by_salary.insert(db_sorted_by_salary.begin() + insert_index, salary);
+  db_sorted_by_emails[target_index]->set_salary(salary);
   return true;
 }
 
 unsigned int CPersonalAgenda::getSalary(const string &name, const string &surname) const
 {
-  int target_index = binarySearchByName(name, surname);
-  if (target_index == -1)
+  if (!binarySearchByName(name, surname))
   {
     return 0;
   }
-  return db_sorted_by_names[target_index].get_salary();
+  int target_index = binarySearchNewName(name, surname);
+  return db_sorted_by_names[target_index]->get_salary();
 }
 
 unsigned int CPersonalAgenda::getSalary(const string &email) const
 {
-  int target_index = binarySearchByEmail(email);
-  if (target_index == -1)
+  if (!binarySearchByEmail(email))
   {
     return 0;
   }
-  return db_sorted_by_emails[target_index].get_salary();
+  int target_index = binarySearchNewEmail(email);
+  return db_sorted_by_emails[target_index]->get_salary();
 }
 
 bool CPersonalAgenda::getRank(const string &name, const string &surname, int &rankMin, int &rankMax) const
 {
-  int index = binarySearchByName(name, surname);
-  if (index == -1)
+  if (!binarySearchByName(name, surname))
   {
     return false;
   }
 
-  unsigned salary = db_sorted_by_names[index].get_salary();
-  int less_count = 0;
-  int equal_count = 0;
+  int index = binarySearchNewName(name, surname);
+  unsigned salary = db_sorted_by_names[index]->get_salary();
 
-  for (const auto &x : db_sorted_by_names)
-  {
-    if (x.get_salary() < salary)
-    {
-      less_count++;
-    }
-    if (x.get_salary() == salary)
-    {
-      equal_count++;
-    }
-  }
+  int less_count = binarySearchNewSalary(salary);
+  int equal_count = std::upper_bound(db_sorted_by_salary.begin(), db_sorted_by_salary.end(), salary, [](const unsigned &a, const unsigned &b)
+                                     { return a < b; }) -
+                    db_sorted_by_salary.begin();
 
+  equal_count = equal_count - less_count;
   rankMin = less_count;
   rankMax = less_count + equal_count - 1;
   return true;
@@ -385,28 +314,20 @@ bool CPersonalAgenda::getRank(const string &name, const string &surname, int &ra
 
 bool CPersonalAgenda::getRank(const string &email, int &rankMin, int &rankMax) const
 {
-  int index = binarySearchByEmail(email);
-  if (index == -1)
+  if (!binarySearchByEmail(email))
   {
     return false;
   }
 
-  unsigned salary = db_sorted_by_emails[index].get_salary();
-  int less_count = 0;
-  int equal_count = 0;
+  int index = binarySearchNewEmail(email);
+  unsigned salary = db_sorted_by_emails[index]->get_salary();
 
-  for (const auto &x : db_sorted_by_emails)
-  {
-    if (x.get_salary() < salary)
-    {
-      less_count++;
-    }
-    if (x.get_salary() == salary)
-    {
-      equal_count++;
-    }
-  }
+  int less_count = binarySearchNewSalary(salary);
+  int equal_count = std::upper_bound(db_sorted_by_salary.begin(), db_sorted_by_salary.end(), salary, [](const unsigned &a, const unsigned &b)
+                                     { return a < b; }) -
+                    db_sorted_by_salary.begin();
 
+  equal_count = equal_count - less_count;
   rankMin = less_count;
   rankMax = less_count + equal_count - 1;
   return true;
@@ -414,69 +335,67 @@ bool CPersonalAgenda::getRank(const string &email, int &rankMin, int &rankMax) c
 
 bool CPersonalAgenda::del(const string &name, const string &surname)
 {
-  int index = binarySearchByName(name, surname);
-  if (index == -1)
+  if (!binarySearchByName(name, surname))
   {
     return false;
   }
-  int index_emails = binarySearchByEmail(db_sorted_by_names[index].get_email());
+
+  int index = binarySearchNewName(name, surname);
+  int index_emails = binarySearchNewEmail(db_sorted_by_names[index]->get_email());
+  int index_salary = binarySearchNewSalary(db_sorted_by_names[index]->get_salary());
+
+  delete db_sorted_by_names[index];
+
   db_sorted_by_names.erase(db_sorted_by_names.begin() + index);
   db_sorted_by_emails.erase(db_sorted_by_emails.begin() + index_emails);
+  db_sorted_by_salary.erase(db_sorted_by_salary.begin() + index_salary);
   return true;
 }
 
 bool CPersonalAgenda::del(const string &email)
 {
-  int index = binarySearchByEmail(email);
-  if (index == -1)
+  if (!binarySearchByEmail(email))
   {
     return false;
   }
-  int index_names = binarySearchByName(db_sorted_by_emails[index].get_name(), db_sorted_by_emails[index].get_surname());
-  db_sorted_by_names.erase(db_sorted_by_names.begin() + index_names);
+
+  int index = binarySearchNewEmail(email);
+  int index_names = binarySearchNewName(db_sorted_by_emails[index]->get_name(), db_sorted_by_emails[index]->get_surname());
+  int index_salary = binarySearchNewSalary(db_sorted_by_emails[index]->get_salary());
+
+  delete db_sorted_by_emails[index];
+
   db_sorted_by_emails.erase(db_sorted_by_emails.begin() + index);
+  db_sorted_by_names.erase(db_sorted_by_names.begin() + index_names);
+  db_sorted_by_salary.erase(db_sorted_by_salary.begin() + index_salary);
   return true;
 }
 
 bool CPersonalAgenda::changeName(const string &email, const string &newName, const string &newSurname)
 {
-  if (!unique_credentials(newName, newSurname))
+  if (!unique_credentials(newName, newSurname) || !binarySearchByEmail(email))
   {
     return false;
   }
 
-  int index = binarySearchByEmail(email);
-  // if employee wasnt found
-  if (index == -1)
-  {
-    return false;
-  }
-  int index_names = binarySearchByName(db_sorted_by_emails[index].get_name(), db_sorted_by_emails[index].get_surname());
-  db_sorted_by_emails[index].change_name(newName, newSurname);
-  db_sorted_by_names[index_names].change_name(newName, newSurname);
-  sort(db_sorted_by_names.begin(), db_sorted_by_names.end(), cmpName);
+  int index = binarySearchNewEmail(email);
+  db_sorted_by_emails[index]->change_name(newName, newSurname);
+  sort(db_sorted_by_names.begin(), db_sorted_by_names.end(), [](const Employee *a, const Employee *b)
+       { return std::tie(a->get_surname(), a->get_name()) < std::tie(b->get_surname(), b->get_name()); });
   return true;
 }
 
 bool CPersonalAgenda::changeEmail(const string &name, const string &surname, const string &newEmail)
 {
-  if (!unique_credentials(newEmail))
+  if (!unique_credentials(newEmail) || !binarySearchByName(name, surname))
   {
     return false;
   }
 
-  int index = binarySearchByName(name, surname);
-
-  // if employee wasnt found
-  if (index == -1)
-  {
-    return false;
-  }
-  int index_emails = binarySearchByEmail(db_sorted_by_names[index].get_email());
-  db_sorted_by_emails[index_emails].change_email(newEmail);
-  db_sorted_by_names[index].change_email(newEmail);
-
-  sort(db_sorted_by_emails.begin(), db_sorted_by_emails.end(), cmpEmail);
+  int target_index = binarySearchNewName(name, surname);
+  db_sorted_by_names[target_index]->change_email(newEmail);
+  sort(db_sorted_by_emails.begin(), db_sorted_by_emails.end(), [](const Employee *a, const Employee *b)
+       { return a->get_email() < b->get_email(); });
   return true;
 }
 
@@ -487,12 +406,17 @@ operator<<(std::ostream &stream, const CPersonalAgenda &db)
   stream << "-------NAME-SORT--------\n";
   for (const auto &x : db.db_sorted_by_names)
   {
-    stream << x.get_name() << " " << x.get_surname() << " " << x.get_email() << " " << x.get_salary() << "\n";
+    stream << x->get_name() << " " << x->get_surname() << " " << x->get_email() << " " << x->get_salary() << "\n";
   }
   stream << "-------EMAIL-SORT--------\n";
   for (const auto &x : db.db_sorted_by_emails)
   {
-    stream << x.get_name() << " " << x.get_surname() << " " << x.get_email() << " " << x.get_salary() << "\n";
+    stream << x->get_name() << " " << x->get_surname() << " " << x->get_email() << " " << x->get_salary() << "\n";
+  }
+  stream << "-------SALARY-SORT--------\n";
+  for (const auto &x : db.db_sorted_by_salary)
+  {
+    stream << x << "\n";
   }
   stream << endl;
   return stream;
