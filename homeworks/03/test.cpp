@@ -26,134 +26,25 @@ using namespace std;
 class CRange
 {
 private:
-  long long m_lo;
-  long long m_hi;
-
-  bool boundary_check(long long lo, long long hi)
-  {
-    return lo <= hi;
-  }
-
+  // todo
 public:
-  CRange(long long lo) : m_lo(lo), m_hi(lo) {}
-  CRange(long long lo, long long hi)
-  {
-    if (!boundary_check(lo, hi))
-    {
-      throw std::logic_error("invalid boundaries.");
-    }
-    m_lo = lo;
-    m_hi = hi;
-  }
-  bool in_interval(const long long val) const
-  {
-    return val <= m_hi && val >= m_lo;
-  }
-  bool equal_boundary() const
-  {
-    return m_lo == m_hi;
-  }
-  bool overlapping_boundaries(const CRange &target_interval) const
-  {
-    return std::max(m_lo, target_interval.m_lo) <= std::min(m_hi, target_interval.m_hi);
-  }
-  long long get_lo() const
-  {
-    return m_lo;
-  }
-  long long get_hi() const
-  {
-    return m_hi;
-  }
-  bool can_be_merged(const CRange &target_interval) const
-  {
-    return std::max(m_lo, target_interval.m_lo) <= std::min(m_hi, target_interval.m_hi) || std::max(m_lo, target_interval.m_lo) <= std::min(m_hi, target_interval.m_hi) + 1;
-  }
+  // constructor
 };
 
 class CRangeList
 {
 private:
-  vector<CRange> list_of_intervals;
-
+  // todo
 public:
   // constructor
-  CRangeList() {}
   // includes long long / range
-  bool includes(const long long val) const;
-  bool includes(const CRange &interval) const;
   // += range / range list
-  CRangeList &operator+=(const CRange &list)
-  {
-    bool merged = false;
-    for (const auto &x : list_of_intervals)
-    {
-      if (x.can_be_merged(list))
-      {
-        merged = true;
-      }
-    }
-    if (!merged)
-    {
-      list_of_intervals.push_back(list);
-    }
-    return *this;
-  }
-  CRangeList &operator+=(const CRangeList &list)
-  {
-  }
   // -= range / range list
   // = range / range list
-  CRangeList &operator=(const CRange &other)
-  {
-    if (list_of_intervals.size() != 0)
-    {
-      list_of_intervals.clear();
-    }
-    list_of_intervals.push_back(other);
-    return *this;
-  }
-  CRangeList &operator=(const CRangeList &other)
-  {
-    list_of_intervals = other.list_of_intervals;
-    return *this;
-  }
   // operator ==
   // operator !=
   // operator <<
 };
-
-bool CRangeList::includes(const long long val) const
-{
-  for (const auto &x : list_of_intervals)
-  {
-    if (x.in_interval(val))
-    {
-      return true;
-    }
-  }
-  return false;
-}
-// TBC
-bool CRangeList::includes(const CRange &target_interval) const
-{
-  if (target_interval.equal_boundary())
-  {
-    return includes(target_interval.get_lo());
-  }
-
-  vector<CRange> combined_intervals;
-  for (const auto &x : list_of_intervals)
-  {
-    // if intervals overlap
-    if (x.overlapping_boundaries(target_interval))
-    {
-      CRange temp{std::max(x.get_lo(), target_interval.get_lo()), std::min(x.get_hi(), target_interval.get_hi())};
-      combined_intervals.push_back(temp);
-    }
-  }
-  return true;
-}
 
 #ifndef __PROGTEST__
 string toString(const CRangeList &x)
