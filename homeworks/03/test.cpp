@@ -30,6 +30,7 @@ public:
 private:
   // todo
 };
+
 class CRangeList
 {
 public:
