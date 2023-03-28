@@ -70,6 +70,8 @@ public:
   // constructor initializes empty list of intervals
   CRangeList() {}
   // includes long long / range
+  bool includes(long long val) const;
+  bool includes(const CRange &interval) const;
   // += range / range list
   CRangeList operator+(const CRange &other) const;
   CRangeList &operator+=(const CRange &other);
@@ -98,6 +100,31 @@ int CRangeList::binary_search_interval(const CRange &interval) const
 }
 
 // public methods
+bool CRangeList::includes(long long val) const
+{
+  CRange temp{val, val};
+  for (unsigned i = 0; i < list_intervals.size(); ++i)
+  {
+    if (list_intervals[i].overlap(temp))
+    {
+      return true;
+    }
+  }
+  return false;
+}
+bool CRangeList::includes(const CRange &interval) const
+{
+  if (interval.single_integer())
+  {
+    return includes(interval.get_low());
+  }
+  CRangeList tmp1 = *this;
+  tmp1 -= interval;
+  tmp1 += interval;
+  return tmp1 == *this;
+  return false;
+}
+
 CRangeList &CRangeList::operator=(const CRange &other)
 {
   if (list_intervals.size() == 0)
@@ -241,16 +268,30 @@ CRangeList &CRangeList::operator-=(const CRange &other)
       // right side
       else if (list_intervals[i].right_side_engulf(other))
       {
-        CRange tmp{list_intervals[i].get_low(), other.get_low() - 1};
-        list_intervals.erase(list_intervals.begin() + i);
-        *this += tmp;
+        if (list_intervals[i].single_integer())
+        {
+          list_intervals.erase(list_intervals.begin() + i);
+        }
+        else
+        {
+          CRange tmp{list_intervals[i].get_low(), other.get_low() - 1};
+          list_intervals.erase(list_intervals.begin() + i);
+          *this += tmp;
+        }
       }
       // left side
       else if (list_intervals[i].left_side_engulf(other))
       {
-        CRange tmp{other.get_hi() + 1, list_intervals[i].get_hi()};
-        list_intervals.erase(list_intervals.begin() + i);
-        *this += tmp;
+        if (list_intervals[i].single_integer())
+        {
+          list_intervals.erase(list_intervals.begin() + i);
+        }
+        else
+        {
+          CRange tmp{other.get_hi() + 1, list_intervals[i].get_hi()};
+          list_intervals.erase(list_intervals.begin() + i);
+          *this += tmp;
+        }
       }
     }
   }
@@ -383,15 +424,15 @@ int main(void)
   assert(toString(b) == "{<-500..-401>,<-399..-300>,<-30..9>,15,<21..29>,<41..899>,<2501..3000>}");
   assert(!(a == b));
   assert(a != b);
-  // assert(b.includes(15));
-  // assert(b.includes(2900));
-  // assert(b.includes(CRange(15, 15)));
-  // assert(b.includes(CRange(-350, -350)));
-  // assert(b.includes(CRange(100, 200)));
-  // assert(!b.includes(CRange(800, 900)));
-  // assert(!b.includes(CRange(-1000, -450)));
-  // assert(!b.includes(CRange(0, 500)));
-  // a += CRange(-10000, 10000) + CRange(10000000, 1000000000);
+  assert(b.includes(15));
+  assert(b.includes(2900));
+  assert(b.includes(CRange(15, 15)));
+  assert(b.includes(CRange(-350, -350)));
+  assert(b.includes(CRange(100, 200)));
+  assert(!b.includes(CRange(800, 900)));
+  assert(!b.includes(CRange(-1000, -450)));
+  assert(!b.includes(CRange(0, 500)));
+  a += CRange(-10000, 10000) + CRange(10000000, 1000000000);
   // assert(toString(a) == "{<-10000..10000>,<10000000..1000000000>}");
   // b += a;
   // assert(toString(b) == "{<-10000..10000>,<10000000..1000000000>}");
