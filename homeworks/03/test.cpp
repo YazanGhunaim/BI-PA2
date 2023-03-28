@@ -42,6 +42,10 @@ public:
   long long get_hi() const { return m_hi; }
   bool overlap(const CRange &other) const { return std::max(m_lo, other.m_lo) <= std::min(m_hi, other.m_hi) + 1; }
   bool single_integer() const { return m_lo == m_hi; };
+  bool equal_range(const CRange &other) const { return m_lo == other.m_lo && m_hi == other.m_hi; }
+  bool complete_containment(const CRange &other) const { return m_lo <= other.m_lo && m_hi >= other.m_hi; }
+  bool right_side_engulf(const CRange &other) const { return other.m_lo <= m_hi && other.m_hi >= m_hi; }
+  bool left_side_engulf(const CRange &other) const { return other.m_lo <= m_lo && other.m_hi >= m_lo; }
   // merging two intervals, modifying current instance
   CRange &merge(const CRange &other);
 };
@@ -72,11 +76,15 @@ public:
   CRangeList &operator+=(const CRangeList &other);
   friend CRangeList operator+(const CRange &lhs, const CRange &rhs);
   // -= range / range list
+  CRangeList &operator-=(const CRange &other);
+  CRangeList &operator-=(const CRangeList &other);
   // = range / range list
   CRangeList &operator=(const CRange &other);
   CRangeList &operator=(const CRangeList &other);
   // operator ==
+  bool operator==(const CRangeList &other) const;
   // operator !=
+  bool operator!=(const CRangeList &other) const;
   // operator <<
   friend std::ostream &operator<<(std::ostream &os, const CRangeList &list);
 };
@@ -90,11 +98,6 @@ int CRangeList::binary_search_interval(const CRange &interval) const
 }
 
 // public methods
-CRangeList CRangeList::operator+(const CRange &other) const
-{
-  CRangeList temp = *this;
-  return temp += other;
-}
 CRangeList &CRangeList::operator=(const CRange &other)
 {
   if (list_intervals.size() == 0)
@@ -108,6 +111,11 @@ CRangeList &CRangeList::operator=(const CRangeList &other)
   return *this;
 }
 
+CRangeList CRangeList::operator+(const CRange &other) const
+{
+  CRangeList temp = *this;
+  return temp += other;
+}
 CRangeList &CRangeList::operator+=(const CRange &other)
 {
   if (list_intervals.size() == 0)
@@ -210,6 +218,73 @@ CRangeList &CRangeList::operator+=(const CRangeList &other)
   return *this;
 }
 
+CRangeList &CRangeList::operator-=(const CRange &other)
+{
+  for (unsigned i = 0; i < list_intervals.size(); ++i)
+  {
+    if (list_intervals[i].overlap(other))
+    {
+      // equal intervals
+      if (list_intervals[i].equal_range(other))
+      {
+        list_intervals.erase(list_intervals.begin() + i);
+      }
+      // completely inside interval
+      else if (list_intervals[i].complete_containment(other))
+      {
+        CRange tmp1{list_intervals[i].get_low(), other.get_low() - 1};
+        CRange tmp2{other.get_hi() + 1, list_intervals[i].get_hi()};
+        list_intervals.erase(list_intervals.begin() + i);
+        *this += tmp1;
+        *this += tmp2;
+      }
+      // right side
+      else if (list_intervals[i].right_side_engulf(other))
+      {
+        CRange tmp{list_intervals[i].get_low(), other.get_low() - 1};
+        list_intervals.erase(list_intervals.begin() + i);
+        *this += tmp;
+      }
+      // left side
+      else if (list_intervals[i].left_side_engulf(other))
+      {
+        CRange tmp{other.get_hi() + 1, list_intervals[i].get_hi()};
+        list_intervals.erase(list_intervals.begin() + i);
+        *this += tmp;
+      }
+    }
+  }
+  return *this;
+}
+CRangeList &CRangeList::operator-=(const CRangeList &other)
+{
+  for (const auto &interval : other.list_intervals)
+  {
+    *this -= interval;
+  }
+  return *this;
+}
+
+bool CRangeList::operator==(const CRangeList &other) const
+{
+  if (list_intervals.size() != other.list_intervals.size())
+  {
+    return false;
+  }
+  for (size_t i = 0; i < list_intervals.size(); ++i)
+  {
+    if (!list_intervals[i].equal_range(other.list_intervals[i]))
+    {
+      return false;
+    }
+  }
+  return true;
+}
+bool CRangeList::operator!=(const CRangeList &other) const
+{
+  return !(*this == other);
+}
+
 // friend functions
 CRangeList operator+(const CRange &lhs, const CRange &rhs)
 {
@@ -280,34 +355,34 @@ int main(void)
   b = CRange(-500, -300) + CRange(2000, 3000) + CRange(700, 1001);
   a += b;
   assert(toString(a) == "{<-500..-300>,<-30..1001>,<2000..3000>}");
-  // a -= CRange(-400, -400);
-  // assert(toString(a) == "{<-500..-401>,<-399..-300>,<-30..1001>,<2000..3000>}");
-  // a -= CRange(10, 20) + CRange(900, 2500) + CRange(30, 40) + CRange(10000, 20000);
-  // assert(toString(a) == "{<-500..-401>,<-399..-300>,<-30..9>,<21..29>,<41..899>,<2501..3000>}");
-  // try
-  // {
-  //   a += CRange(15, 18) + CRange(10, 0) + CRange(35, 38);
-  //   assert("Exception not thrown" == nullptr);
-  // }
-  // catch (const std::logic_error &e)
-  // {
-  // }
-  // catch (...)
-  // {
-  //   assert("Invalid exception thrown" == nullptr);
-  // }
-  // assert(toString(a) == "{<-500..-401>,<-399..-300>,<-30..9>,<21..29>,<41..899>,<2501..3000>}");
-  // b = a;
-  // assert(a == b);
-  // assert(!(a != b));
-  // b += CRange(2600, 2700);
-  // assert(toString(b) == "{<-500..-401>,<-399..-300>,<-30..9>,<21..29>,<41..899>,<2501..3000>}");
-  // assert(a == b);
-  // assert(!(a != b));
-  // b += CRange(15, 15);
-  // assert(toString(b) == "{<-500..-401>,<-399..-300>,<-30..9>,15,<21..29>,<41..899>,<2501..3000>}");
-  // assert(!(a == b));
-  // assert(a != b);
+  a -= CRange(-400, -400);
+  assert(toString(a) == "{<-500..-401>,<-399..-300>,<-30..1001>,<2000..3000>}");
+  a -= CRange(10, 20) + CRange(900, 2500) + CRange(30, 40) + CRange(10000, 20000);
+  assert(toString(a) == "{<-500..-401>,<-399..-300>,<-30..9>,<21..29>,<41..899>,<2501..3000>}");
+  try
+  {
+    a += CRange(15, 18) + CRange(10, 0) + CRange(35, 38);
+    assert("Exception not thrown" == nullptr);
+  }
+  catch (const std::logic_error &e)
+  {
+  }
+  catch (...)
+  {
+    assert("Invalid exception thrown" == nullptr);
+  }
+  assert(toString(a) == "{<-500..-401>,<-399..-300>,<-30..9>,<21..29>,<41..899>,<2501..3000>}");
+  b = a;
+  assert(a == b);
+  assert(!(a != b));
+  b += CRange(2600, 2700);
+  assert(toString(b) == "{<-500..-401>,<-399..-300>,<-30..9>,<21..29>,<41..899>,<2501..3000>}");
+  assert(a == b);
+  assert(!(a != b));
+  b += CRange(15, 15);
+  assert(toString(b) == "{<-500..-401>,<-399..-300>,<-30..9>,15,<21..29>,<41..899>,<2501..3000>}");
+  assert(!(a == b));
+  assert(a != b);
   // assert(b.includes(15));
   // assert(b.includes(2900));
   // assert(b.includes(CRange(15, 15)));
