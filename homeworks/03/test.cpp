@@ -177,11 +177,20 @@ CRangeList &CRangeList::operator+=(const CRange &other)
     }
     else if (index + 1 < (int)list_intervals.size())
     {
-      if (list_intervals[index + 1].overlap(other))
+      bool merged = false;
+      for (unsigned i = index; i < list_intervals.size(); ++i)
       {
-        list_intervals[index + 1].merge(other);
+        if (list_intervals[index + 1].overlap(other))
+        {
+          merged = true;
+          list_intervals[index + 1].merge(other);
+        }
+        else
+        {
+          break;
+        }
       }
-      else
+      if (merged == false)
       {
         list_intervals.insert(list_intervals.begin() + index, other);
       }
