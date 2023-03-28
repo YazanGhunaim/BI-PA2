@@ -30,10 +30,9 @@ private:
   long long m_hi;
 
 public:
-  CRange(long long lo) : m_lo(lo), m_hi(lo){};
   CRange(long long lo, long long hi) : m_lo(lo), m_hi(hi)
   {
-    if (lo >= hi)
+    if (lo > hi)
     {
       throw std::logic_error("Invalid boundaries");
     }
@@ -41,8 +40,8 @@ public:
   // getters
   long long get_low() const { return m_lo; }
   long long get_hi() const { return m_hi; }
-  // overlap check
   bool overlap(const CRange &other) const { return std::max(m_lo, other.m_lo) <= std::min(m_hi, other.m_hi) + 1; }
+  bool single_integer() const { return m_lo == m_hi; };
   // merging two intervals, modifying current instance
   CRange &merge(const CRange &other);
 };
@@ -226,9 +225,27 @@ std::ostream &operator<<(std::ostream &os, const CRangeList &list)
   for (unsigned i = 0; i < list.list_intervals.size(); ++i)
   {
     if (i < list.list_intervals.size() - 1)
-      os << '<' << list.list_intervals[i].get_low() << ".." << list.list_intervals[i].get_hi() << ">,";
+    {
+      if (list.list_intervals[i].single_integer())
+      {
+        os << list.list_intervals[i].get_low() << ",";
+      }
+      else
+      {
+        os << '<' << list.list_intervals[i].get_low() << ".." << list.list_intervals[i].get_hi() << ">,";
+      }
+    }
     else
-      os << '<' << list.list_intervals[i].get_low() << ".." << list.list_intervals[i].get_hi() << '>';
+    {
+      if (list.list_intervals[i].single_integer())
+      {
+        os << list.list_intervals[i].get_low();
+      }
+      else
+      {
+        os << '<' << list.list_intervals[i].get_low() << ".." << list.list_intervals[i].get_hi() << '>';
+      }
+    }
   }
   os << '}';
   return os;
