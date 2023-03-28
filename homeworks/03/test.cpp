@@ -33,7 +33,7 @@ public:
   CRange(long long lo) : m_lo(lo), m_hi(lo){};
   CRange(long long lo, long long hi) : m_lo(lo), m_hi(hi)
   {
-    if (lo < hi)
+    if (lo >= hi)
     {
       throw std::logic_error("Invalid boundaries");
     }
@@ -41,7 +41,19 @@ public:
   // getters
   long long get_low() const { return m_lo; }
   long long get_hi() const { return m_hi; }
+  // overlap check
+  bool overlap(const CRange &other) const { return std::max(m_lo, other.m_lo) <= std::min(m_hi, other.m_hi) + 1; }
+  // merging two intervals, modifying current instance
+  CRange &merge(const CRange &other);
 };
+
+// public methods
+CRange &CRange::merge(const CRange &other)
+{
+  this->m_lo = std::min(m_lo, other.m_lo);
+  this->m_hi = std::max(m_hi, other.m_hi);
+  return *this;
+}
 
 class CRangeList
 {
@@ -56,6 +68,10 @@ public:
   CRangeList() {}
   // includes long long / range
   // += range / range list
+  CRangeList operator+(const CRange &other) const;
+  CRangeList &operator+=(const CRange &other);
+  CRangeList &operator+=(const CRangeList &other);
+  friend CRangeList operator+(const CRange &lhs, const CRange &rhs);
   // -= range / range list
   // = range / range list
   CRangeList &operator=(const CRange &other);
@@ -63,6 +79,7 @@ public:
   // operator ==
   // operator !=
   // operator <<
+  friend std::ostream &operator<<(std::ostream &os, const CRangeList &list);
 };
 
 // private methods
@@ -74,6 +91,11 @@ int CRangeList::binary_search_interval(const CRange &interval) const
 }
 
 // public methods
+CRangeList CRangeList::operator+(const CRange &other) const
+{
+  CRangeList temp = *this;
+  return temp += other;
+}
 CRangeList &CRangeList::operator=(const CRange &other)
 {
   if (list_intervals.size() == 0)
@@ -87,6 +109,121 @@ CRangeList &CRangeList::operator=(const CRangeList &other)
   return *this;
 }
 
+CRangeList &CRangeList::operator+=(const CRange &other)
+{
+  if (list_intervals.size() == 0)
+  {
+    list_intervals.push_back(other);
+  }
+
+  int index = binary_search_interval(other);
+  // inserting at the beginning
+  if (index == 0)
+  {
+    if (list_intervals[index].overlap(other))
+    {
+      list_intervals[index].merge(other);
+      for (unsigned i = index; i < list_intervals.size(); ++i)
+      {
+        if (index + 1 < (int)list_intervals.size())
+        {
+          if (list_intervals[index].overlap(list_intervals[index + 1]))
+          {
+            list_intervals[index].merge(list_intervals[index + 1]);
+            list_intervals.erase(list_intervals.begin() + index + 1);
+          }
+          else
+          {
+            break;
+          }
+        }
+      }
+    }
+    else
+    {
+      list_intervals.insert(list_intervals.begin() + index, other);
+    }
+  }
+  // inserting at the end
+  else if (index == (int)list_intervals.size())
+  {
+    if (list_intervals[index - 1].overlap(other))
+    {
+      list_intervals[index - 1].merge(other);
+    }
+    else
+    {
+      list_intervals.insert(list_intervals.begin() + index, other);
+    }
+  }
+  // inserting in the middle
+  else
+  {
+    if (list_intervals[index - 1].overlap(other))
+    {
+      list_intervals[index - 1].merge(other);
+      for (unsigned i = index; i < list_intervals.size(); ++i)
+      {
+        if (list_intervals[index].overlap(list_intervals[index - 1]))
+        {
+          list_intervals[index].merge(list_intervals[index - 1]);
+          list_intervals.erase(list_intervals.begin() + index - 1);
+        }
+        else
+        {
+          break;
+        }
+      }
+    }
+    else if (index + 1 < (int)list_intervals.size())
+    {
+      if (list_intervals[index + 1].overlap(other))
+      {
+        list_intervals[index + 1].merge(other);
+      }
+      else
+      {
+        list_intervals.insert(list_intervals.begin() + index, other);
+      }
+    }
+    else
+    {
+      list_intervals.insert(list_intervals.begin() + index, other);
+    }
+  }
+  return *this;
+}
+CRangeList &CRangeList::operator+=(const CRangeList &other)
+{
+  for (const auto &interval : other.list_intervals)
+  {
+    *this += interval;
+  }
+  return *this;
+}
+
+// friend functions
+CRangeList operator+(const CRange &lhs, const CRange &rhs)
+{
+  CRangeList result;
+  result += lhs;
+  result += rhs;
+  return result;
+}
+
+std::ostream &operator<<(std::ostream &os, const CRangeList &list)
+{
+  os << '{';
+  for (unsigned i = 0; i < list.list_intervals.size(); ++i)
+  {
+    if (i < list.list_intervals.size() - 1)
+      os << '<' << list.list_intervals[i].get_low() << ".." << list.list_intervals[i].get_hi() << ">,";
+    else
+      os << '<' << list.list_intervals[i].get_low() << ".." << list.list_intervals[i].get_hi() << '>';
+  }
+  os << '}';
+  return os;
+}
 #ifndef __PROGTEST__
 string
 toString(const CRangeList &x)
@@ -107,16 +244,16 @@ int main(void)
   a += CRange(-5, 0);
   a += CRange(8, 50);
   assert(toString(a) == "{<-5..0>,<5..100>}");
-  // a += CRange(101, 105) + CRange(120, 150) + CRange(160, 180) + CRange(190, 210);
-  // assert(toString(a) == "{<-5..0>,<5..105>,<120..150>,<160..180>,<190..210>}");
-  // a += CRange(106, 119) + CRange(152, 158);
-  // assert(toString(a) == "{<-5..0>,<5..150>,<152..158>,<160..180>,<190..210>}");
-  // a += CRange(-3, 170);
-  // a += CRange(-30, 1000);
-  // assert(toString(a) == "{<-30..1000>}");
-  // b = CRange(-500, -300) + CRange(2000, 3000) + CRange(700, 1001);
-  // a += b;
-  // assert(toString(a) == "{<-500..-300>,<-30..1001>,<2000..3000>}");
+  a += CRange(101, 105) + CRange(120, 150) + CRange(160, 180) + CRange(190, 210);
+  assert(toString(a) == "{<-5..0>,<5..105>,<120..150>,<160..180>,<190..210>}");
+  a += CRange(106, 119) + CRange(152, 158);
+  assert(toString(a) == "{<-5..0>,<5..150>,<152..158>,<160..180>,<190..210>}");
+  a += CRange(-3, 170);
+  a += CRange(-30, 1000);
+  assert(toString(a) == "{<-30..1000>}");
+  b = CRange(-500, -300) + CRange(2000, 3000) + CRange(700, 1001);
+  a += b;
+  assert(toString(a) == "{<-500..-300>,<-30..1001>,<2000..3000>}");
   // a -= CRange(-400, -400);
   // assert(toString(a) == "{<-500..-401>,<-399..-300>,<-30..1001>,<2000..3000>}");
   // a -= CRange(10, 20) + CRange(900, 2500) + CRange(30, 40) + CRange(10000, 20000);
