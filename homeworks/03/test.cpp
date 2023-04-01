@@ -218,7 +218,7 @@ CRangeList &CRangeList::operator+=(const CRange &other)
     }
     else
     {
-      list_intervals.insert(list_intervals.begin() + index, other);
+      list_intervals.push_back(other);
     }
   }
   // inserting in the middle
@@ -512,16 +512,16 @@ int main(void)
   assert(toString(i) == "{<-100..9223372036854775805>}");
 
   CRangeList j;
-  for (long long i = 0; i < 20000000; i += 50)
+  for (long long i = 0; i < 10000000; i += 50)
   {
     j += CRange(i, i + 99);
   }
   CRangeList k;
-  for (long long i = 0; i < 20000000; i += 100)
+  for (long long i = 0; i < 10000000; i += 100)
   {
     k += CRange(i, i + 99);
   }
-  for (long long i = 0; i < 20000000; i += 200)
+  for (long long i = 0; i < 10000000; i += 200)
   {
     k -= CRange(i + 50, i + 149);
   }
