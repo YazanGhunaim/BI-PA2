@@ -38,11 +38,11 @@ public:
     }
   }
   // getters
+  bool overlap(const CRange &other) const;
   long long get_low() const { return m_lo; }
   long long get_hi() const { return m_hi; }
   void set_low(long long lo) { m_lo = lo; }
   void set_hi(long long hi) { m_hi = hi; }
-  bool overlap(const CRange &other) const { return std::max(m_lo, other.m_lo) <= std::min(m_hi, other.m_hi) + 1; }
   bool single_integer() const { return m_lo == m_hi; };
   bool equal_range(const CRange &other) const { return m_lo == other.m_lo && m_hi == other.m_hi; }
   bool complete_containment(const CRange &other) const { return m_lo <= other.m_lo && m_hi >= other.m_hi; }
@@ -60,6 +60,16 @@ CRange &CRange::merge(const CRange &other)
   this->m_lo = std::min(m_lo, other.m_lo);
   this->m_hi = std::max(m_hi, other.m_hi);
   return *this;
+}
+bool CRange::overlap(const CRange &other) const
+{
+  long long min_hi = std::min(m_hi, other.m_hi);
+  long long max_lo = std::max(m_lo, other.m_lo);
+  if (min_hi == LLONG_MAX)
+  {
+    return max_lo <= min_hi;
+  }
+  return max_lo <= min_hi + 1;
 }
 // friend functions
 std::ostream &operator<<(std::ostream &os, const CRange &range)
@@ -160,6 +170,7 @@ CRangeList &CRangeList::operator+=(const CRange &other)
   if (list_intervals.size() == 0)
   {
     list_intervals.push_back(other);
+    return *this;
   }
 
   int index = binary_search_interval(other);
@@ -459,6 +470,84 @@ int main(void)
   assert(toString(b) == "{<0..100>,<160..169>,<171..180>,<251..300>}");
   b -= CRange(10, 90) - CRange(20, 30) - CRange(40, 50) - CRange(60, 90) + CRange(70, 80);
   assert(toString(b) == "{<0..9>,<20..30>,<40..50>,<60..69>,<81..100>,<160..169>,<171..180>,<251..300>}");
+
+  CRangeList c;
+  c += CRange(LLONG_MIN, LLONG_MAX);
+  assert(toString(c) == "{<-9223372036854775808..9223372036854775807>}");
+
+  CRangeList d;
+  d += CRange(-100, 100);
+  d += CRange(LLONG_MIN, LLONG_MAX);
+  assert(toString(d) == "{<-9223372036854775808..9223372036854775807>}");
+
+  CRangeList e;
+  e += CRange(LLONG_MIN, -1);
+  e += CRange(-100, 100);
+  assert(toString(e) == "{<-9223372036854775808..100>}");
+
+  // Test adding a range that overlaps with LLONG_MAX to a CRangeList object
+  CRangeList f;
+  f += CRange(1, LLONG_MAX);
+  f += CRange(-100, 100);
+  assert(toString(f) == "{<-100..9223372036854775807>}");
+
+  // Test removing a range that includes LLONG_MIN and LLONG_MAX from a CRangeList object
+  CRangeList g;
+  g += CRange(LLONG_MIN, LLONG_MAX);
+  g -= CRange(LLONG_MIN, LLONG_MAX);
+  assert(toString(g) == "{}");
+
+  // Test removing a range that overlaps with LLONG_MIN from a CRangeList object
+  CRangeList h;
+  h += CRange(LLONG_MIN, -1);
+  h += CRange(-100, 100);
+  h -= CRange(LLONG_MIN, 0);
+  assert(toString(h) == "{<1..100>}");
+
+  // Test removing a range that overlaps with LLONG_MAX from a CRangeList object
+  CRangeList i;
+  i += CRange(1, LLONG_MAX);
+  i += CRange(-100, 100);
+  i -= CRange(LLONG_MAX - 1, LLONG_MAX);
+  assert(toString(i) == "{<-100..9223372036854775805>}");
+
+  CRangeList j;
+  for (long long i = 0; i < 20000000; i += 50)
+  {
+    j += CRange(i, i + 99);
+  }
+  CRangeList k;
+  for (long long i = 0; i < 20000000; i += 100)
+  {
+    k += CRange(i, i + 99);
+  }
+  for (long long i = 0; i < 20000000; i += 200)
+  {
+    k -= CRange(i + 50, i + 149);
+  }
+  // CRangeList k;
+  // for (int i = 0; i < INT_MAX; ++i)
+  // {
+  //   k += CRange(i, i);
+  //   k.includes(i);
+  // }
+  // CRangeList j;
+  // j += CRange(INT_MIN, INT_MAX);
+  // for (int i = 0; i < INT_MAX; ++i)
+  // {
+  //   k -= CRange(i, i);
+  //   k.includes(i);
+  // }
+  // CRangeList j;
+  // j += CRange(INT_MIN, INT_MAX);
+  // for (int i = 0; i < INT_MAX; i += 2)
+  // {
+  //   j -= CRange(i, i);
+  // }
+  // for (int i = 0; i < INT_MAX; i += 2)
+  // {
+  //   j += CRange(i, i);
+  // }
 #ifdef EXTENDED_SYNTAX
   CRangeList x{{5, 20}, {150, 200}, {-9, 12}, {48, 93}};
   assert(toString(x) == "{<-9..20>,<48..93>,<150..200>}");
