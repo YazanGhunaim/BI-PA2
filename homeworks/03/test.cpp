@@ -89,7 +89,7 @@ public:
   CRangeList operator-(const CRange &other) const;
   CRangeList &operator-=(const CRange &other);
   CRangeList &operator-=(const CRangeList &other);
-  friend CRangeList operator-=(const CRange &lhs, const CRange &rhs);
+  friend CRangeList operator-(const CRange &lhs, const CRange &rhs);
   // = range / range list
   CRangeList &operator=(const CRange &other);
   CRangeList &operator=(const CRangeList &other);
