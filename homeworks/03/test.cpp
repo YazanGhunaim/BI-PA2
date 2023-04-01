@@ -118,26 +118,19 @@ int CRangeList::binary_search_interval_hi(const CRange &interval) const
 // public methods
 bool CRangeList::includes(long long val) const
 {
-  CRange temp{val, val};
-  for (unsigned i = 0; i < list_intervals.size(); ++i)
-  {
-    if (list_intervals[i].overlap(temp))
-    {
-      return true;
-    }
-  }
+  CRange target{val, val};
+
+  unsigned x = binary_search_interval_hi(target);
+  if (x >= 0 && x < list_intervals.size() && list_intervals[x].complete_containment(target))
+    return true;
   return false;
 }
-bool CRangeList::includes(const CRange &interval) const
+bool CRangeList::includes(const CRange &target) const
 {
-  if (interval.single_integer())
-  {
-    return includes(interval.get_low());
-  }
-  CRangeList tmp1 = *this;
-  tmp1 -= interval;
-  tmp1 += interval;
-  return tmp1 == *this;
+  unsigned x = binary_search_interval(target);
+  unsigned y = binary_search_interval_hi(target);
+  if (x >= 0 && x < list_intervals.size() && (list_intervals[x].complete_containment(target) || list_intervals[y].complete_containment(target)))
+    return true;
   return false;
 }
 
