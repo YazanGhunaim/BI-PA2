@@ -167,6 +167,7 @@ CRangeList &CRangeList::operator+=(const CRange &other)
   }
 
   int index = binary_search_interval(other);
+  int end_index = binary_search_interval_hi(other);
   // inserting at the beginning
   if (index == 0)
   {
@@ -175,7 +176,7 @@ CRangeList &CRangeList::operator+=(const CRange &other)
       list_intervals[index].merge(other);
 
       auto it = list_intervals.begin();
-      while (it != list_intervals.end())
+      while (it != list_intervals.end() + end_index)
       {
         auto next_it = std::next(it);
         if (next_it != list_intervals.end())
@@ -219,7 +220,6 @@ CRangeList &CRangeList::operator+=(const CRange &other)
     if (list_intervals[index - 1].overlap(other))
     {
       list_intervals[index - 1].merge(other);
-
       auto it = list_intervals.begin() + index;
       while (it != list_intervals.end())
       {
@@ -240,7 +240,7 @@ CRangeList &CRangeList::operator+=(const CRange &other)
       bool merged = false;
 
       auto it = list_intervals.begin() + index;
-      while (it != list_intervals.end())
+      while (it != list_intervals.end() + end_index)
       {
         auto next_it = std::next(it);
         if (list_intervals[index].overlap(*next_it))
@@ -281,81 +281,72 @@ CRangeList CRangeList::operator-(const CRange &other) const
 }
 CRangeList &CRangeList::operator-=(const CRange &other)
 {
-  auto it = list_intervals.begin();
   CRangeList temp;
-  while (it != list_intervals.end())
+  for (unsigned i = 0; i < list_intervals.size(); ++i)
   {
-    if ((*it).overlap(other))
+    temp += list_intervals[i];
+    // equal intervals
+    if (temp.list_intervals.back().overlap(other))
     {
       // equal intervals
-      if ((*it).equal_range(other) || other.complete_containment((*it)))
+      if (temp.list_intervals.back().equal_range(other) || other.complete_containment(temp.list_intervals.back()))
       {
-        it = list_intervals.erase(it);
+        temp.list_intervals.pop_back();
       }
       // completely inside interval
-      else if ((*it).complete_containment(other))
+      else if (temp.list_intervals.back().complete_containment(other))
       {
-        if (other.get_hi() == (*it).get_hi())
+        if (other.get_hi() == temp.list_intervals.back().get_hi())
         {
-          CRange tmp1{(*it).get_low(), other.get_low() - 1};
-          it = list_intervals.erase(it);
+          CRange tmp1{temp.list_intervals.back().get_low(), other.get_low() - 1};
+          temp.list_intervals.pop_back();
           temp += tmp1;
         }
-        else if (other.get_low() == (*it).get_low())
+        else if (other.get_low() == temp.list_intervals.back().get_low())
         {
-          CRange tmp2{other.get_hi() + 1, (*it).get_hi()};
-          it = list_intervals.erase(it);
+          CRange tmp2{other.get_hi() + 1, temp.list_intervals.back().get_hi()};
+          temp.list_intervals.pop_back();
           temp += tmp2;
         }
         else
         {
-          CRange tmp1{(*it).get_low(), other.get_low() - 1};
-          CRange tmp2{other.get_hi() + 1, (*it).get_hi()};
-          it = list_intervals.erase(it);
+          CRange tmp1{temp.list_intervals.back().get_low(), other.get_low() - 1};
+          CRange tmp2{other.get_hi() + 1, temp.list_intervals.back().get_hi()};
+          temp.list_intervals.pop_back();
           temp += tmp1;
           temp += tmp2;
         }
       }
       // right side
-      else if ((*it).right_side_engulf(other))
+      else if (temp.list_intervals.back().right_side_engulf(other))
       {
-        if ((*it).single_integer())
+        if (temp.list_intervals.back().single_integer())
         {
-          it = list_intervals.erase(it);
+          temp.list_intervals.pop_back();
         }
         else
         {
-          CRange tmp{(*it).get_low(), other.get_low() - 1};
-          it = list_intervals.erase(it);
+          CRange tmp{temp.list_intervals.back().get_low(), other.get_low() - 1};
+          temp.list_intervals.pop_back();
           temp += tmp;
         }
       }
       // left side
-      else if ((*it).left_side_engulf(other))
+      else if (temp.list_intervals.back().left_side_engulf(other))
       {
-        if ((*it).single_integer())
+        if (temp.list_intervals.back().single_integer())
         {
-          it = list_intervals.erase(it);
+          temp.list_intervals.pop_back();
         }
         else
         {
-          CRange tmp{other.get_hi() + 1, (*it).get_hi()};
-          it = list_intervals.erase(it);
+          CRange tmp{other.get_hi() + 1, temp.list_intervals.back().get_hi()};
+          temp.list_intervals.pop_back();
           temp += tmp;
         }
       }
-      else
-      {
-        it++;
-      }
-    }
-    else
-    {
-      temp += (*it);
-      it++;
     }
   }
-
   return *this = temp;
 }
 CRangeList &CRangeList::operator-=(const CRangeList &other)
