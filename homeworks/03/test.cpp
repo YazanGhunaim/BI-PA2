@@ -40,12 +40,15 @@ public:
   // getters
   long long get_low() const { return m_lo; }
   long long get_hi() const { return m_hi; }
+  void set_low(long long lo) { m_lo = lo; }
+  void set_hi(long long hi) { m_hi = hi; }
   bool overlap(const CRange &other) const { return std::max(m_lo, other.m_lo) <= std::min(m_hi, other.m_hi) + 1; }
   bool single_integer() const { return m_lo == m_hi; };
   bool equal_range(const CRange &other) const { return m_lo == other.m_lo && m_hi == other.m_hi; }
   bool complete_containment(const CRange &other) const { return m_lo <= other.m_lo && m_hi >= other.m_hi; }
-  bool right_side_engulf(const CRange &other) const { return other.m_lo <= m_hi && other.m_hi >= m_hi; }
-  bool left_side_engulf(const CRange &other) const { return other.m_lo <= m_lo && other.m_hi >= m_lo; }
+  bool contains(const CRange &other) const { return m_lo < other.get_low() && m_hi > other.get_hi(); }
+  bool right_side_engulf(const CRange &other) const { return m_hi > other.m_hi; }
+  bool left_side_engulf(const CRange &other) const { return m_lo < other.m_lo; }
   // merging two intervals, modifying current instance
   CRange &merge(const CRange &other);
   friend std::ostream &operator<<(std::ostream &os, const CRange &range);
@@ -274,28 +277,36 @@ CRangeList CRangeList::operator-(const CRange &other) const
 }
 CRangeList &CRangeList::operator-=(const CRange &other)
 {
-  vector<CRange> new_intervals;
-  for (const auto &interval : list_intervals)
+  CRangeList new_intervals;
+  for (auto &interval : list_intervals)
   {
-    if (interval.get_hi() < other.get_low() || interval.get_low() > other.get_hi())
+    if (!interval.overlap(other))
     {
-      new_intervals.push_back(interval);
+      new_intervals.list_intervals.push_back(interval);
     }
-    else if (interval.get_low() < other.get_low() && interval.get_hi() > other.get_hi())
+    else if (interval.contains(other))
     {
-      new_intervals.push_back({interval.get_low(), other.get_low() - 1});
-      new_intervals.push_back({other.get_hi() + 1, interval.get_hi()});
+      long long tmp_hi = interval.get_hi();
+      interval.set_hi(other.get_low() - 1);
+      new_intervals.list_intervals.push_back(interval);
+      new_intervals.list_intervals.push_back(CRange{other.get_hi() + 1, tmp_hi});
     }
-    else if (interval.get_low() < other.get_low())
+    else if (interval.left_side_engulf(other))
     {
-      new_intervals.push_back({interval.get_low(), other.get_low() - 1});
+      interval.set_hi(other.get_low() - 1);
+      new_intervals.list_intervals.push_back(interval);
     }
-    else if (interval.get_hi() > other.get_hi())
+    else if (interval.right_side_engulf(other))
     {
-      new_intervals.push_back({other.get_hi() + 1, interval.get_hi()});
+      interval.set_low(other.get_hi() + 1);
+      new_intervals.list_intervals.push_back(interval);
+    }
+    else
+    {
+      // Interval overlaps with both sides of 'other', do not add it to the new list
     }
   }
-  list_intervals = new_intervals;
+  list_intervals = std::move(new_intervals.list_intervals);
   return *this;
 }
 CRangeList &CRangeList::operator-=(const CRangeList &other)
@@ -445,7 +456,7 @@ int main(void)
   assert(toString(b) == "{<-10000..10000>,<10000000..1000000000>}");
   b -= a;
   assert(toString(b) == "{}");
-  b += CRange(0, 100) + CRange(200, 300) - CRange(150, 250) + CRange(160, 180) - CRange(170, 170);
+  b += CRange(0, 100) + CRange(200, 300) - CRange(150, 250) + CRange(160, 180) - CRange{170, 170};
   assert(toString(b) == "{<0..100>,<160..169>,<171..180>,<251..300>}");
   b -= CRange(10, 90) - CRange(20, 30) - CRange(40, 50) - CRange(60, 90) + CRange(70, 80);
   assert(toString(b) == "{<0..9>,<20..30>,<40..50>,<60..69>,<81..100>,<160..169>,<171..180>,<251..300>}");
