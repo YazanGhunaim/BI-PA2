@@ -277,36 +277,35 @@ CRangeList CRangeList::operator-(const CRange &other) const
 }
 CRangeList &CRangeList::operator-=(const CRange &other)
 {
-  CRangeList new_intervals;
-  for (auto &interval : list_intervals)
+  auto it = list_intervals.begin();
+  while (it != list_intervals.end())
   {
-    if (!interval.overlap(other))
+    if (it->overlap(other))
     {
-      new_intervals.list_intervals.push_back(interval);
+      // modify the current interval in place
+      if (it->contains(other))
+      {
+        long long tmp_hi = it->get_hi();
+        it->set_hi(other.get_low() - 1);
+        it = list_intervals.insert(it + 1, CRange{other.get_hi() + 1, tmp_hi});
+      }
+      else if (it->left_side_engulf(other))
+      {
+        it->set_hi(other.get_low() - 1);
+      }
+      else if (it->right_side_engulf(other))
+      {
+        it->set_low(other.get_hi() + 1);
+      }
+      else
+      {
+        // Interval overlaps with both sides of 'other', remove it
+        it = list_intervals.erase(it);
+        continue;
+      }
     }
-    else if (interval.contains(other))
-    {
-      long long tmp_hi = interval.get_hi();
-      interval.set_hi(other.get_low() - 1);
-      new_intervals.list_intervals.push_back(interval);
-      new_intervals.list_intervals.push_back(CRange{other.get_hi() + 1, tmp_hi});
-    }
-    else if (interval.left_side_engulf(other))
-    {
-      interval.set_hi(other.get_low() - 1);
-      new_intervals.list_intervals.push_back(interval);
-    }
-    else if (interval.right_side_engulf(other))
-    {
-      interval.set_low(other.get_hi() + 1);
-      new_intervals.list_intervals.push_back(interval);
-    }
-    else
-    {
-      // Interval overlaps with both sides of 'other', do not add it to the new list
-    }
+    ++it;
   }
-  list_intervals = std::move(new_intervals.list_intervals);
   return *this;
 }
 CRangeList &CRangeList::operator-=(const CRangeList &other)
