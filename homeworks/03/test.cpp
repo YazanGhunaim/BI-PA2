@@ -274,73 +274,29 @@ CRangeList CRangeList::operator-(const CRange &other) const
 }
 CRangeList &CRangeList::operator-=(const CRange &other)
 {
-  CRangeList temp;
-  for (unsigned i = 0; i < list_intervals.size(); ++i)
+  vector<CRange> new_intervals;
+  for (const auto &interval : list_intervals)
   {
-    temp += list_intervals[i];
-    // equal intervals
-    if (temp.list_intervals.back().overlap(other))
+    if (interval.get_hi() < other.get_low() || interval.get_low() > other.get_hi())
     {
-      // equal intervals
-      if (temp.list_intervals.back().equal_range(other) || other.complete_containment(temp.list_intervals.back()))
-      {
-        temp.list_intervals.pop_back();
-      }
-      // completely inside interval
-      else if (temp.list_intervals.back().complete_containment(other))
-      {
-        if (other.get_hi() == temp.list_intervals.back().get_hi())
-        {
-          CRange tmp1{temp.list_intervals.back().get_low(), other.get_low() - 1};
-          temp.list_intervals.pop_back();
-          temp += tmp1;
-        }
-        else if (other.get_low() == temp.list_intervals.back().get_low())
-        {
-          CRange tmp2{other.get_hi() + 1, temp.list_intervals.back().get_hi()};
-          temp.list_intervals.pop_back();
-          temp += tmp2;
-        }
-        else
-        {
-          CRange tmp1{temp.list_intervals.back().get_low(), other.get_low() - 1};
-          CRange tmp2{other.get_hi() + 1, temp.list_intervals.back().get_hi()};
-          temp.list_intervals.pop_back();
-          temp += tmp1;
-          temp += tmp2;
-        }
-      }
-      // right side
-      else if (temp.list_intervals.back().right_side_engulf(other))
-      {
-        if (temp.list_intervals.back().single_integer())
-        {
-          temp.list_intervals.pop_back();
-        }
-        else
-        {
-          CRange tmp{temp.list_intervals.back().get_low(), other.get_low() - 1};
-          temp.list_intervals.pop_back();
-          temp += tmp;
-        }
-      }
-      // left side
-      else if (temp.list_intervals.back().left_side_engulf(other))
-      {
-        if (temp.list_intervals.back().single_integer())
-        {
-          temp.list_intervals.pop_back();
-        }
-        else
-        {
-          CRange tmp{other.get_hi() + 1, temp.list_intervals.back().get_hi()};
-          temp.list_intervals.pop_back();
-          temp += tmp;
-        }
-      }
+      new_intervals.push_back(interval);
+    }
+    else if (interval.get_low() < other.get_low() && interval.get_hi() > other.get_hi())
+    {
+      new_intervals.push_back({interval.get_low(), other.get_low() - 1});
+      new_intervals.push_back({other.get_hi() + 1, interval.get_hi()});
+    }
+    else if (interval.get_low() < other.get_low())
+    {
+      new_intervals.push_back({interval.get_low(), other.get_low() - 1});
+    }
+    else if (interval.get_hi() > other.get_hi())
+    {
+      new_intervals.push_back({other.get_hi() + 1, interval.get_hi()});
     }
   }
-  return *this = temp;
+  list_intervals = new_intervals;
+  return *this;
 }
 CRangeList &CRangeList::operator-=(const CRangeList &other)
 {
