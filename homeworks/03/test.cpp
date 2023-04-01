@@ -78,8 +78,10 @@ public:
   CRangeList &operator+=(const CRangeList &other);
   friend CRangeList operator+(const CRange &lhs, const CRange &rhs);
   // -= range / range list
+  CRangeList operator-(const CRange &other) const;
   CRangeList &operator-=(const CRange &other);
   CRangeList &operator-=(const CRangeList &other);
+  friend CRangeList operator-=(const CRange &lhs, const CRange &rhs);
   // = range / range list
   CRangeList &operator=(const CRange &other);
   CRangeList &operator=(const CRangeList &other);
@@ -157,19 +159,26 @@ CRangeList &CRangeList::operator+=(const CRange &other)
     if (list_intervals[index].overlap(other))
     {
       list_intervals[index].merge(other);
-      for (unsigned i = index; i < list_intervals.size(); ++i)
+
+      auto it = list_intervals.begin();
+      while (it != list_intervals.end())
       {
-        if (index + 1 < (int)list_intervals.size())
+        auto next_it = std::next(it);
+        if (next_it != list_intervals.end())
         {
-          if (list_intervals[index].overlap(list_intervals[index + 1]))
+          if (list_intervals[index].overlap(*next_it))
           {
-            list_intervals[index].merge(list_intervals[index + 1]);
-            list_intervals.erase(list_intervals.begin() + index + 1);
+            list_intervals[index].merge(*next_it);
+            next_it = list_intervals.erase(next_it);
           }
           else
           {
             break;
           }
+        }
+        else
+        {
+          break;
         }
       }
     }
@@ -196,12 +205,15 @@ CRangeList &CRangeList::operator+=(const CRange &other)
     if (list_intervals[index - 1].overlap(other))
     {
       list_intervals[index - 1].merge(other);
-      for (unsigned i = index; i < list_intervals.size(); ++i)
+
+      auto it = list_intervals.begin() + index;
+      while (it != list_intervals.end())
       {
-        if (list_intervals[index].overlap(list_intervals[index - 1]))
+        auto prev_it = std::prev(it);
+        if (list_intervals[index].overlap(*prev_it))
         {
-          list_intervals[index].merge(list_intervals[index - 1]);
-          list_intervals.erase(list_intervals.begin() + index - 1);
+          list_intervals[index].merge(*prev_it);
+          prev_it = list_intervals.erase(prev_it);
         }
         else
         {
@@ -212,12 +224,15 @@ CRangeList &CRangeList::operator+=(const CRange &other)
     else if (index + 1 < (int)list_intervals.size())
     {
       bool merged = false;
-      for (unsigned i = index; i < list_intervals.size(); ++i)
+
+      auto it = list_intervals.begin() + index;
+      while (it != list_intervals.end())
       {
-        if (list_intervals[index + 1].overlap(other))
+        auto next_it = std::next(it);
+        if (list_intervals[index].overlap(*next_it))
         {
           merged = true;
-          list_intervals[index + 1].merge(other);
+          list_intervals[index].merge(*next_it);
         }
         else
         {
@@ -245,6 +260,11 @@ CRangeList &CRangeList::operator+=(const CRangeList &other)
   return *this;
 }
 
+CRangeList CRangeList::operator-(const CRange &other) const
+{
+  CRangeList temp = *this;
+  return temp -= other;
+}
 CRangeList &CRangeList::operator-=(const CRange &other)
 {
   for (unsigned i = 0; i < list_intervals.size(); ++i)
@@ -259,11 +279,26 @@ CRangeList &CRangeList::operator-=(const CRange &other)
       // completely inside interval
       else if (list_intervals[i].complete_containment(other))
       {
-        CRange tmp1{list_intervals[i].get_low(), other.get_low() - 1};
-        CRange tmp2{other.get_hi() + 1, list_intervals[i].get_hi()};
-        list_intervals.erase(list_intervals.begin() + i);
-        *this += tmp1;
-        *this += tmp2;
+        if (other.get_hi() == list_intervals[i].get_hi())
+        {
+          CRange tmp1{list_intervals[i].get_low(), other.get_low() - 1};
+          list_intervals.erase(list_intervals.begin() + i);
+          *this += tmp1;
+        }
+        else if (other.get_low() == list_intervals[i].get_low())
+        {
+          CRange tmp2{other.get_hi() + 1, list_intervals[i].get_hi()};
+          list_intervals.erase(list_intervals.begin() + i);
+          *this += tmp2;
+        }
+        else
+        {
+          CRange tmp1{list_intervals[i].get_low(), other.get_low() - 1};
+          CRange tmp2{other.get_hi() + 1, list_intervals[i].get_hi()};
+          list_intervals.erase(list_intervals.begin() + i);
+          *this += tmp1;
+          *this += tmp2;
+        }
       }
       // right side
       else if (list_intervals[i].right_side_engulf(other))
@@ -334,7 +369,13 @@ CRangeList operator+(const CRange &lhs, const CRange &rhs)
   result += rhs;
   return result;
 }
-
+CRangeList operator-(const CRange &lhs, const CRange &rhs)
+{
+  CRangeList result;
+  result += lhs;
+  result -= rhs;
+  return result;
+}
 std::ostream &operator<<(std::ostream &os, const CRangeList &list)
 {
   os << '{';
@@ -433,15 +474,15 @@ int main(void)
   assert(!b.includes(CRange(-1000, -450)));
   assert(!b.includes(CRange(0, 500)));
   a += CRange(-10000, 10000) + CRange(10000000, 1000000000);
-  // assert(toString(a) == "{<-10000..10000>,<10000000..1000000000>}");
-  // b += a;
-  // assert(toString(b) == "{<-10000..10000>,<10000000..1000000000>}");
-  // b -= a;
-  // assert(toString(b) == "{}");
-  // b += CRange(0, 100) + CRange(200, 300) - CRange(150, 250) + CRange(160, 180) - CRange(170, 170);
-  // assert(toString(b) == "{<0..100>,<160..169>,<171..180>,<251..300>}");
-  // b -= CRange(10, 90) - CRange(20, 30) - CRange(40, 50) - CRange(60, 90) + CRange(70, 80);
-  // assert(toString(b) == "{<0..9>,<20..30>,<40..50>,<60..69>,<81..100>,<160..169>,<171..180>,<251..300>}");
+  assert(toString(a) == "{<-10000..10000>,<10000000..1000000000>}");
+  b += a;
+  assert(toString(b) == "{<-10000..10000>,<10000000..1000000000>}");
+  b -= a;
+  assert(toString(b) == "{}");
+  b += CRange(0, 100) + CRange(200, 300) - CRange(150, 250) + CRange(160, 180) - CRange(170, 170);
+  assert(toString(b) == "{<0..100>,<160..169>,<171..180>,<251..300>}");
+  b -= CRange(10, 90) - CRange(20, 30) - CRange(40, 50) - CRange(60, 90) + CRange(70, 80);
+  assert(toString(b) == "{<0..9>,<20..30>,<40..50>,<60..69>,<81..100>,<160..169>,<171..180>,<251..300>}");
 #ifdef EXTENDED_SYNTAX
   CRangeList x{{5, 20}, {150, 200}, {-9, 12}, {48, 93}};
   assert(toString(x) == "{<-9..20>,<48..93>,<150..200>}");
