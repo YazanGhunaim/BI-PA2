@@ -41,6 +41,11 @@ public:
     // copy constructor (deep copy)
     CLinkedSet(const CLinkedSet &other)
     {
+        if (other.Empty())
+        {
+            m_Begin = nullptr;
+            return;
+        }
         if (other.m_Begin == nullptr)
         {
             m_Begin = nullptr;
@@ -71,10 +76,23 @@ public:
         // self assignment check
         if (&other == this)
             return *this;
-        this->~CLinkedSet();
+
+        if (other.Empty())
+        {
+            this->~CLinkedSet();
+            m_Begin = nullptr;
+            return *this;
+        }
+        // copy the contents of the other object
         CLinkedSet temp{other};
+
+        // destroy the current object
+        this->~CLinkedSet();
+
+        // copy the contents of the temporary object
         m_Begin = temp.m_Begin;
         temp.m_Begin = nullptr;
+
         return *this;
     }
     // destructor
@@ -245,6 +263,22 @@ struct CLinkedSetTester
         assert(!x0.Contains("Kadlecova Kvetslava"));
         assert(x1.Contains("Kadlecova Kvetslava"));
     }
+    static void test3()
+    {
+        CLinkedSet x0;
+        CLinkedSet x1;
+        x1 = x0;
+    }
+
+    static void test4()
+    {
+        CLinkedSet x0;
+        CLinkedSet x1;
+        assert(x0.Insert("Jerabek Michal"));
+        assert(x0.Insert("Pavlik Ales"));
+        assert(x0.Insert("Dusek Zikmund"));
+        x0 = x1;
+    }
 };
 
 int main()
@@ -252,6 +286,8 @@ int main()
     CLinkedSetTester::test0();
     CLinkedSetTester::test1();
     CLinkedSetTester::test2();
+    CLinkedSetTester::test3();
+    CLinkedSetTester::test4();
     return 0;
 }
 #endif /* __PROGTEST__ */
