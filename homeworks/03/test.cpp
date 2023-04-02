@@ -21,7 +21,7 @@ using namespace std;
 #endif /* __PROGTEST__ */
 
 // uncomment if your code implements initializer lists
-#define EXTENDED_SYNTAX
+// #define EXTENDED_SYNTAX
 
 class CRange
 {
@@ -90,13 +90,6 @@ private:
 public:
   // constructor initializes empty list of intervals
   CRangeList() {}
-  CRangeList(std::initializer_list<std::pair<long long, long long>> intervals)
-  {
-    for (const auto &interval : intervals)
-    {
-      *this += CRange{interval.first, interval.second};
-    }
-  }
   // includes long long / range
   bool includes(long long val) const;
   bool includes(const CRange &interval) const;
@@ -119,15 +112,6 @@ public:
   bool operator!=(const CRangeList &other) const;
   // operator <<
   friend std::ostream &operator<<(std::ostream &os, const CRangeList &list);
-  // define begin() and end() functions for range-based for loop
-  std::vector<CRange>::const_iterator begin() const
-  {
-    return list_intervals.begin();
-  }
-  std::vector<CRange>::const_iterator end() const
-  {
-    return list_intervals.end();
-  }
 };
 
 // private methods
@@ -324,10 +308,6 @@ CRangeList operator-(const CRange &lhs, const CRange &rhs)
 }
 std::ostream &operator<<(std::ostream &os, const CRangeList &list)
 {
-  // Save the current formatting and precision settings
-  std::ios_base::fmtflags f(os.flags());
-  std::streamsize p(os.precision());
-
   os << '{';
   for (unsigned i = 0; i < list.list_intervals.size(); ++i)
   {
@@ -335,30 +315,26 @@ std::ostream &operator<<(std::ostream &os, const CRangeList &list)
     {
       if (list.list_intervals[i].single_integer())
       {
-        os << std::dec << list.list_intervals[i].get_low() << ",";
+        os << list.list_intervals[i].get_low() << ",";
       }
       else
       {
-        os << '<' << std::dec << list.list_intervals[i].get_low() << ".." << std::dec << list.list_intervals[i].get_hi() << ">,";
+        os << '<' << list.list_intervals[i].get_low() << ".." << list.list_intervals[i].get_hi() << ">,";
       }
     }
     else
     {
       if (list.list_intervals[i].single_integer())
       {
-        os << std::dec << list.list_intervals[i].get_low();
+        os << list.list_intervals[i].get_low();
       }
       else
       {
-        os << '<' << std::dec << list.list_intervals[i].get_low() << ".." << std::dec << list.list_intervals[i].get_hi() << '>';
+        os << '<' << list.list_intervals[i].get_low() << ".." << list.list_intervals[i].get_hi() << '>';
       }
     }
   }
   os << '}';
-
-  // Restore the original formatting and precision settings
-  os.flags(f);
-  os.precision(p);
   return os;
 }
 #ifndef __PROGTEST__
