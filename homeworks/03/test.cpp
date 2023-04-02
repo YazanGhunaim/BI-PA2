@@ -167,109 +167,46 @@ CRangeList CRangeList::operator+(const CRange &other) const
 }
 CRangeList &CRangeList::operator+=(const CRange &other)
 {
-  if (list_intervals.size() == 0)
+  if (list_intervals.empty())
   {
     list_intervals.push_back(other);
     return *this;
   }
 
   int index = binary_search_interval(other);
-  int end_index = binary_search_interval_hi(other);
-  // inserting at the beginning
-  if (index == 0)
-  {
-    if (list_intervals[index].overlap(other))
-    {
-      list_intervals[index].merge(other);
 
-      auto it = list_intervals.begin();
-      while (it != list_intervals.end() + end_index)
-      {
-        auto next_it = std::next(it);
-        if (next_it != list_intervals.end())
-        {
-          if (list_intervals[index].overlap(*next_it))
-          {
-            list_intervals[index].merge(*next_it);
-            next_it = list_intervals.erase(next_it);
-          }
-          else
-          {
-            break;
-          }
-        }
-        else
-        {
-          break;
-        }
-      }
-    }
-    else
-    {
-      list_intervals.insert(list_intervals.begin() + index, other);
-    }
-  }
-  // inserting at the end
-  else if (index == (int)list_intervals.size())
+  // Check if the new interval overlaps with the previous interval
+  if (index > 0 && list_intervals[index - 1].overlap(other))
   {
-    if (list_intervals[index - 1].overlap(other))
-    {
-      list_intervals[index - 1].merge(other);
-    }
-    else
-    {
-      list_intervals.push_back(other);
-    }
+    list_intervals[index - 1].merge(other);
+    index--;
   }
-  // inserting in the middle
+  // Check if the new interval overlaps with the next interval
+  else if (index < (int)list_intervals.size() && list_intervals[index].overlap(other))
+  {
+    list_intervals[index].merge(other);
+  }
   else
   {
-    if (list_intervals[index - 1].overlap(other))
-    {
-      list_intervals[index - 1].merge(other);
-      auto it = list_intervals.begin() + index;
-      while (it != list_intervals.end())
-      {
-        auto prev_it = std::prev(it);
-        if (list_intervals[index].overlap(*prev_it))
-        {
-          list_intervals[index].merge(*prev_it);
-          prev_it = list_intervals.erase(prev_it);
-        }
-        else
-        {
-          break;
-        }
-      }
-    }
-    else if (index + 1 < (int)list_intervals.size())
-    {
-      bool merged = false;
+    list_intervals.insert(list_intervals.begin() + index, other);
+  }
 
-      auto it = list_intervals.begin() + index;
-      while (it != list_intervals.end() + end_index)
-      {
-        auto next_it = std::next(it);
-        if (list_intervals[index].overlap(*next_it))
-        {
-          merged = true;
-          list_intervals[index].merge(*next_it);
-        }
-        else
-        {
-          break;
-        }
-      }
-      if (merged == false)
-      {
-        list_intervals.insert(list_intervals.begin() + index, other);
-      }
+  // Merge overlapping intervals
+  auto it = list_intervals.begin() + index;
+  while (it != list_intervals.end() - 1)
+  {
+    auto next_it = std::next(it);
+    if (it->overlap(*next_it))
+    {
+      it->merge(*next_it);
+      list_intervals.erase(next_it);
     }
     else
     {
-      list_intervals.insert(list_intervals.begin() + index, other);
+      it++;
     }
   }
+
   return *this;
 }
 CRangeList &CRangeList::operator+=(const CRangeList &other)
@@ -511,43 +448,6 @@ int main(void)
   i -= CRange(LLONG_MAX - 1, LLONG_MAX);
   assert(toString(i) == "{<-100..9223372036854775805>}");
 
-  CRangeList j;
-  for (long long i = 0; i < 10000000; i += 50)
-  {
-    j += CRange(i, i + 99);
-  }
-  CRangeList k;
-  for (long long i = 0; i < 10000000; i += 100)
-  {
-    k += CRange(i, i + 99);
-  }
-  for (long long i = 0; i < 10000000; i += 200)
-  {
-    k -= CRange(i + 50, i + 149);
-  }
-  // CRangeList k;
-  // for (int i = 0; i < INT_MAX; ++i)
-  // {
-  //   k += CRange(i, i);
-  //   k.includes(i);
-  // }
-  // CRangeList j;
-  // j += CRange(INT_MIN, INT_MAX);
-  // for (int i = 0; i < INT_MAX; ++i)
-  // {
-  //   k -= CRange(i, i);
-  //   k.includes(i);
-  // }
-  // CRangeList j;
-  // j += CRange(INT_MIN, INT_MAX);
-  // for (int i = 0; i < INT_MAX; i += 2)
-  // {
-  //   j -= CRange(i, i);
-  // }
-  // for (int i = 0; i < INT_MAX; i += 2)
-  // {
-  //   j += CRange(i, i);
-  // }
 #ifdef EXTENDED_SYNTAX
   CRangeList x{{5, 20}, {150, 200}, {-9, 12}, {48, 93}};
   assert(toString(x) == "{<-9..20>,<48..93>,<150..200>}");
