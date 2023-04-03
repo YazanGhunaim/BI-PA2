@@ -46,10 +46,6 @@ public:
             m_Begin = nullptr;
             return;
         }
-        if (other.m_Begin == nullptr)
-        {
-            m_Begin = nullptr;
-        }
 
         // creating first node
         m_Begin = new CNode;
@@ -279,6 +275,11 @@ struct CLinkedSetTester
         assert(x0.Insert("Dusek Zikmund"));
         x0 = x1;
     }
+    static void test5()
+    {
+        CLinkedSet x0;
+        CLinkedSet x1{x0};
+    }
 };
 
 int main()
@@ -288,6 +289,7 @@ int main()
     CLinkedSetTester::test2();
     CLinkedSetTester::test3();
     CLinkedSetTester::test4();
+    CLinkedSetTester::test5();
     return 0;
 }
 #endif /* __PROGTEST__ */
