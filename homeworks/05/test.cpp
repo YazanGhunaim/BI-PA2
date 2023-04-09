@@ -81,11 +81,7 @@ private:
   invoice m_invoice;
 
 public:
-  CInvoice(const CDate &date, const string &seller, const string &buyer, unsigned int amount, double vat)
-      : m_invoice{date, seller, buyer, amount, vat}
-  {
-  }
-
+  CInvoice(const CDate &date, const string &seller, const string &buyer, unsigned int amount, double vat) : m_invoice{date, seller, buyer, amount, vat} {}
   CDate date(void) const { return m_invoice.m_date; }
   string buyer(void) const { return m_invoice.m_buyer; }
   string seller(void) const { return m_invoice.m_seller; }
@@ -111,12 +107,21 @@ public:
     }
     return m_invoice.m_date.compare(other.date());
   }
+  bool operator==(const CInvoice &other) const
+  {
+    if (m_invoice.m_date.compare(other.date()) != 0)
+    {
+      return false;
+    }
+    return m_invoice.m_seller == other.seller() && m_invoice.m_buyer == other.buyer() && m_invoice.m_amout == other.amount() && m_invoice.m_vat == other.vat();
+  }
 };
 
 class CSortOpt
 {
 private:
-  // todo
+  std::deque<std::pair<int, bool>> m_sortCriteria;
+
 public:
   static const int BY_DATE = 0;
   static const int BY_BUYER = 1;
@@ -125,7 +130,15 @@ public:
   static const int BY_VAT = 4;
   CSortOpt(void){};
   CSortOpt &addKey(int key, bool ascending = true);
+  std::deque<std::pair<int, bool>> get_keys() const { return m_sortCriteria; }
 };
+
+/* ============ Public Methods ============ */
+CSortOpt &CSortOpt::addKey(int key, bool ascending)
+{
+  m_sortCriteria.push_back(std::make_pair(key, ascending));
+  return *this;
+}
 
 class CVATRegister
 {
@@ -164,15 +177,15 @@ private:
     std::transform(result.begin(), result.end(), result.begin(), ::tolower);
     return result;
   }
-  bool addIssueCheck(const CInvoice &x) const
+  bool addInvoiceCheck(const CInvoice &x) const
   {
     string seller = remove_space(x.seller());
     string buyer = remove_space(x.buyer());
-    if (m_invoiceMap.find(buyer) == m_invoiceMap.end() || m_invoiceMap.find(seller) == m_invoiceMap.end() || seller == buyer)
+    if (m_issuedInvoiceMap.find(buyer) == m_issuedInvoiceMap.end() || m_issuedInvoiceMap.find(seller) == m_issuedInvoiceMap.end() || seller == buyer)
     {
       return false;
     }
-    return m_invoiceMap.find(seller)->second.find(x) == m_invoiceMap.find(seller)->second.end();
+    return m_issuedInvoiceMap.find(seller)->second.find(x) == m_issuedInvoiceMap.find(seller)->second.end();
   }
 
   // custom hash and equal functors
@@ -200,7 +213,8 @@ private:
   };
 
   // member variables
-  std::unordered_map<string, std::set<CInvoice>, CaseInsensitiveHash, CaseInsensitiveEqual> m_invoiceMap;
+  std::unordered_map<string, std::set<CInvoice>, CaseInsensitiveHash, CaseInsensitiveEqual> m_issuedInvoiceMap;
+  std::unordered_map<string, std::set<CInvoice>, CaseInsensitiveHash, CaseInsensitiveEqual> m_acceptedInvoiceMap;
 
 public:
   CVATRegister(void)
@@ -218,24 +232,48 @@ public:
 /* ============ Public Methods ============ */
 bool CVATRegister::registerCompany(const string &name)
 {
-  auto res = m_invoiceMap.emplace(name, std::set<CInvoice>{});
+  auto res = m_issuedInvoiceMap.emplace(name, std::set<CInvoice>{});
   return res.second;
 }
 
 bool CVATRegister::addIssued(const CInvoice &x)
 {
-  if (!addIssueCheck(x))
+  if (!addInvoiceCheck(x))
   {
     return false;
   }
-  m_invoiceMap[x.seller()].insert(x);
+  m_issuedInvoiceMap[x.seller()].insert(x);
   return true;
 }
 
-/* ============ Friend Methods ============ */
-std::ostream &operator<<(std::ostream &os, const CVATRegister &x)
+bool CVATRegister::addAccepted(const CInvoice &x)
 {
-  for (const auto &i : x.m_invoiceMap)
+  if (!addInvoiceCheck(x))
+  {
+    return false;
+  }
+  m_acceptedInvoiceMap[x.buyer()].insert(x);
+  return true;
+}
+
+/* ============ Private Methods ============ */
+
+/* ============ Friend Methods ============ */
+std::ostream &
+operator<<(std::ostream &os, const CVATRegister &x)
+{
+  cout << "issued" << endl;
+  for (const auto &i : x.m_issuedInvoiceMap)
+  {
+    os << i.first << " : ";
+    for (const auto &s : i.second)
+    {
+      os << s.date() << " " << s.seller() << " " << s.buyer() << " " << s.amount() << " " << s.vat() << endl;
+    }
+    os << endl;
+  }
+  cout << "accepted" << endl;
+  for (const auto &i : x.m_acceptedInvoiceMap)
   {
     os << i.first << " : ";
     for (const auto &s : i.second)
@@ -249,7 +287,21 @@ std::ostream &operator<<(std::ostream &os, const CVATRegister &x)
 #ifndef __PROGTEST__
 bool equalLists(const list<CInvoice> &a, const list<CInvoice> &b)
 {
-  // todo
+  if (a.size() != b.size())
+  {
+    return false;
+  }
+
+  auto it1 = a.begin();
+  auto it2 = b.begin();
+  while (it1 != a.end())
+  {
+    if (it1->date().compare(it2->date()) != 0 || it1->amount() != it2->amount() || it1->buyer() != it2->buyer() || it1->seller() != it2->seller() || it1->vat() != it2->vat())
+    {
+      return false;
+    }
+  }
+  return true;
 }
 
 int main(void)
