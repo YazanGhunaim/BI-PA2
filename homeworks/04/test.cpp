@@ -83,6 +83,7 @@ public:
   bool operator!=(const CString &other) const { return !(*this == other); }
   friend std::ostream &operator<<(std::ostream &os, const CString &str);
   bool operator<(const CString &other) const { return strcmp(m_buffer, other.m_buffer); }
+  bool operator>(const CString &other) const { return strcmp(m_buffer, other.m_buffer) > 0; }
 };
 
 std::ostream &operator<<(std::ostream &oss, const CString &str)
@@ -183,22 +184,18 @@ public:
   {
     return m_data;
   }
-
   const T *begin() const
   {
     return m_data;
   }
-
   T *end()
   {
     return m_data + m_size;
   }
-
   const T *end() const
   {
     return m_data + m_size;
   }
-
   void insert(T *pos, const T &value)
   {
     size_t index = pos - m_data;
@@ -289,8 +286,38 @@ private:
     CString m_user;
     CArray<CMail> m_inbox;
     CArray<CMail> m_outbox;
+
+    friend bool operator<(const Mailbox &lhs, const Mailbox &rhs)
+    {
+      return lhs < rhs;
+    }
   };
   CArray<Mailbox> m_server;
+
+  int binary_search_user(const CString &target) const
+  {
+    int start = 0;
+    int end = m_server.size() - 1;
+    int mid = 0;
+
+    while (start <= end)
+    {
+      mid = start + (end - start) / 2;
+      if (m_server[mid].m_user == target)
+      {
+        return mid;
+      }
+      else if (m_server[mid].m_user < target)
+      {
+        start = mid + 1;
+      }
+      else
+      {
+        end = mid - 1;
+      }
+    }
+    return -1;
+  }
 
 public:
   CMailServer(void) {}
@@ -306,12 +333,15 @@ public:
   ~CMailServer(void) {}
   void sendMail(const CMail &m)
   {
+
     // Find the sender mailbox
+    int sender_index = binary_search_user(m.from());
     Mailbox *sender = nullptr;
     for (size_t i = 0; i < m_server.size(); i++)
     {
       if (m_server[i].m_user == m.from())
       {
+        cout << i << " " << sender_index << endl;
         sender = &m_server[i];
         break;
       }
@@ -327,15 +357,17 @@ public:
     }
 
     // Add the mail to the sender's outbox in sorted order
-    auto it = std::lower_bound(sender->m_outbox.begin(), sender->m_outbox.end(), m);
-    sender->m_outbox.insert(it, m);
+    int index = std::lower_bound(sender->m_outbox.begin(), sender->m_outbox.end(), m) - sender->m_outbox.begin();
+    sender->m_outbox.insert(sender->m_outbox.begin() + index, m);
 
     // Find the receiver mailbox
+    int receiver_index = binary_search_user(m.to());
     Mailbox *receiver = nullptr;
     for (size_t i = 0; i < m_server.size(); i++)
     {
       if (m_server[i].m_user == m.to())
       {
+        cout << i << " " << receiver_index << endl;
         receiver = &m_server[i];
         break;
       }
@@ -351,8 +383,8 @@ public:
     }
 
     // Add the mail to the receiver's inbox in sorted order
-    it = std::lower_bound(receiver->m_inbox.begin(), receiver->m_inbox.end(), m);
-    receiver->m_inbox.insert(it, m);
+    int index2 = std::lower_bound(receiver->m_inbox.begin(), receiver->m_inbox.end(), m) - receiver->m_inbox.begin();
+    receiver->m_inbox.insert(receiver->m_inbox.begin() + index2, m);
   }
   CMailIterator outbox(const char *email) const
   {
