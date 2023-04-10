@@ -11,42 +11,393 @@
 using namespace std;
 #endif /* __PROGTEST__ */
 
-class CMail
+class OutOfBoundsException : public std::exception
 {
 public:
-  CMail(const char *from, const char *to, const char *body);
-  bool operator==(const CMail &x) const;
-  friend ostream &operator<<(ostream &os, const CMail &m);
-
-private:
-  // todo
+  virtual const char *what() const noexcept override
+  {
+    return "index out of bounds";
+  }
 };
+
+class CString
+{
+private:
+  char *m_buffer;
+  size_t m_length;
+
+public:
+  CString() : m_buffer(nullptr), m_length(0) {}
+  CString(const char *string) : m_length(strlen(string))
+  {
+    m_buffer = new char[m_length + 1];
+    strcpy(m_buffer, string);
+  }
+  CString(const CString &other) : m_length(other.m_length)
+  {
+    m_buffer = new char[m_length + 1];
+    strcpy(m_buffer, other.m_buffer);
+  }
+  CString &operator=(const CString &src)
+  {
+    if (this != &src)
+    {
+      delete[] m_buffer;
+      m_length = src.m_length;
+      m_buffer = new char[m_length + 1];
+      strcpy(m_buffer, src.m_buffer);
+    }
+    return *this;
+  }
+  ~CString()
+  {
+    delete[] m_buffer;
+    m_buffer = nullptr;
+    m_length = 0;
+  }
+  size_t length() const { return m_length; }
+  char &operator[](size_t index)
+  {
+    if (index >= m_length)
+    {
+      throw OutOfBoundsException();
+    }
+    return m_buffer[index];
+  }
+  const char &operator[](size_t index) const
+  {
+    if (index >= m_length)
+    {
+      throw OutOfBoundsException();
+    }
+    return m_buffer[index];
+  }
+  bool operator==(const CString &other) const
+  {
+    if (m_length != other.m_length)
+    {
+      return false;
+    }
+    return strcmp(m_buffer, other.m_buffer) == 0;
+  }
+  bool operator!=(const CString &other) const { return !(*this == other); }
+  friend std::ostream &operator<<(std::ostream &os, const CString &str);
+  bool operator<(const CString &other) const { return strcmp(m_buffer, other.m_buffer); }
+};
+
+std::ostream &operator<<(std::ostream &oss, const CString &str)
+{
+  return oss << str.m_buffer;
+}
+
+template <typename T>
+class CArray
+{
+private:
+  T *m_data;
+  size_t m_size;
+  size_t m_capacity;
+
+public:
+  CArray() : m_data(), m_size(0), m_capacity(0) {}
+  CArray(size_t size) : m_data(new T[size]), m_size(size), m_capacity(size) {}
+  CArray(const CArray &other) : m_data(new T[other.m_capacity]), m_size(other.m_size), m_capacity(other.m_capacity)
+  {
+    for (size_t i = 0; i < other.m_size; ++i)
+    {
+      m_data[i] = other.m_data[i];
+    }
+  }
+  CArray &operator=(const CArray &src)
+  {
+    if (this != &src)
+    {
+      delete[] m_data;
+      m_data = new T[src.m_capacity];
+      m_size = src.m_size;
+      m_capacity = src.m_capacity;
+      for (size_t i = 0; i < m_size; ++i)
+      {
+        m_data[i] = src.m_data[i];
+      }
+    }
+    return *this;
+  }
+  ~CArray()
+  {
+    delete[] m_data;
+    m_data = nullptr;
+    m_size = m_capacity = 0;
+  }
+  void reserve(size_t capacity)
+  {
+    if (capacity > m_capacity)
+    {
+      T *new_data = new T[capacity];
+      for (size_t i = 0; i < m_size; i++)
+      {
+        new_data[i] = m_data[i];
+      }
+      delete[] m_data;
+      m_data = new_data;
+      m_capacity = capacity;
+    }
+  }
+  void push_back(const T &value)
+  {
+    if (m_capacity == m_size)
+    {
+      reserve(m_capacity * 2 + 1);
+    }
+    m_data[m_size++] = value;
+  }
+  T &operator[](size_t index)
+  {
+    if (index >= m_size)
+    {
+      throw OutOfBoundsException();
+    }
+    return m_data[index];
+  }
+  const T &operator[](size_t index) const
+  {
+    if (index >= m_size)
+    {
+      throw OutOfBoundsException();
+    }
+    return m_data[index];
+  }
+  size_t size() const
+  {
+    return m_size;
+  }
+  size_t capacity() const
+  {
+    return m_capacity;
+  }
+  bool empty() const
+  {
+    return m_size == 0;
+  }
+  T *begin()
+  {
+    return m_data;
+  }
+
+  const T *begin() const
+  {
+    return m_data;
+  }
+
+  T *end()
+  {
+    return m_data + m_size;
+  }
+
+  const T *end() const
+  {
+    return m_data + m_size;
+  }
+
+  void insert(T *pos, const T &value)
+  {
+    size_t index = pos - m_data;
+    if (m_size == m_capacity)
+    {
+      reserve(m_capacity * 2 + 1);
+    }
+    for (size_t i = m_size; i > index; i--)
+    {
+      m_data[i] = m_data[i - 1];
+    }
+    m_data[index] = value;
+    m_size++;
+  }
+};
+
+//====================================================================//
+class CMail
+{
+private:
+  CString m_from;
+  CString m_to;
+  CString m_body;
+
+public:
+  CMail() : m_from(), m_to(), m_body() {}
+  CMail(const char *from, const char *to, const char *body) : m_from(from), m_to(to), m_body(body) {}
+  bool operator==(const CMail &x) const
+  {
+    return m_from == x.m_from && m_to == x.m_to && m_body == x.m_body;
+  }
+  CString from() const { return m_from; }
+  CString to() const { return m_to; }
+  CString body() const { return m_body; }
+  friend ostream &operator<<(ostream &os, const CMail &m);
+  bool operator<(const CMail &other) const
+  {
+    if (m_from < other.m_from)
+    {
+      return true;
+    }
+    else if (m_from == other.m_from)
+    {
+      if (m_to < other.m_to)
+      {
+        return true;
+      }
+      else if (m_to == other.m_to)
+      {
+        return m_body < other.m_body;
+      }
+    }
+    return false;
+  }
+};
+
+std::ostream &operator<<(std::ostream &os, const CMail &m)
+{
+  return os << "From: " << m.m_from << ", "
+            << "To: " << m.m_to << ", "
+            << "Body: " << m.m_body;
+}
 
 class CMailIterator
 {
-public:
-  explicit operator bool(void) const;
-  bool operator!(void) const;
-  const CMail &operator*(void) const;
-  CMailIterator &operator++(void);
-
 private:
-  // todo
+  CArray<CMail> m_mailbox;
+  size_t m_index;
+
+public:
+  CMailIterator() : m_mailbox(), m_index(0) {}
+  CMailIterator(const CArray<CMail> &mailbox) : m_mailbox(mailbox), m_index(0) {}
+  bool operator!() const { return m_index >= m_mailbox.size(); }
+  operator bool() const { return m_index < m_mailbox.size(); }
+  const CMail &operator*() const { return m_mailbox[m_index]; }
+  CMailIterator &operator++()
+  {
+    m_index++;
+    return *this;
+  }
 };
 
 class CMailServer
 {
-public:
-  CMailServer(void);
-  CMailServer(const CMailServer &src);
-  CMailServer &operator=(const CMailServer &src);
-  ~CMailServer(void);
-  void sendMail(const CMail &m);
-  CMailIterator outbox(const char *email) const;
-  CMailIterator inbox(const char *email) const;
-
 private:
-  // todo
+  struct Mailbox
+  {
+    CString m_user;
+    CArray<CMail> m_inbox;
+    CArray<CMail> m_outbox;
+  };
+  CArray<Mailbox> m_server;
+
+public:
+  CMailServer(void) {}
+  CMailServer(const CMailServer &src) : m_server(src.m_server) {}
+  CMailServer &operator=(const CMailServer &src)
+  {
+    if (this != &src)
+    {
+      m_server = src.m_server;
+    }
+    return *this;
+  }
+  ~CMailServer(void) {}
+  void sendMail(const CMail &m)
+  {
+    // Find the sender mailbox
+    Mailbox *sender = nullptr;
+    for (size_t i = 0; i < m_server.size(); i++)
+    {
+      if (m_server[i].m_user == m.from())
+      {
+        sender = &m_server[i];
+        break;
+      }
+    }
+
+    // Create the sender mailbox if it doesn't exist
+    if (sender == nullptr)
+    {
+      Mailbox newMailbox;
+      newMailbox.m_user = m.from();
+      m_server.push_back(newMailbox);
+      sender = &m_server[m_server.size() - 1];
+    }
+
+    // Add the mail to the sender's outbox in sorted order
+    auto it = std::lower_bound(sender->m_outbox.begin(), sender->m_outbox.end(), m);
+    sender->m_outbox.insert(it, m);
+
+    // Find the receiver mailbox
+    Mailbox *receiver = nullptr;
+    for (size_t i = 0; i < m_server.size(); i++)
+    {
+      if (m_server[i].m_user == m.to())
+      {
+        receiver = &m_server[i];
+        break;
+      }
+    }
+
+    // Create the receiver mailbox if it doesn't exist
+    if (receiver == nullptr)
+    {
+      Mailbox newMailbox;
+      newMailbox.m_user = m.to();
+      m_server.push_back(newMailbox);
+      receiver = &m_server[m_server.size() - 1];
+    }
+
+    // Add the mail to the receiver's inbox in sorted order
+    it = std::lower_bound(receiver->m_inbox.begin(), receiver->m_inbox.end(), m);
+    receiver->m_inbox.insert(it, m);
+  }
+  CMailIterator outbox(const char *email) const
+  {
+    // Find the mailbox for the given email address
+    const Mailbox *mailbox = nullptr;
+    for (size_t i = 0; i < m_server.size(); i++)
+    {
+      if (m_server[i].m_user == email)
+      {
+        mailbox = &m_server[i];
+        break;
+      }
+    }
+
+    // If the mailbox doesn't exist, return an invalid iterator
+    if (mailbox == nullptr)
+    {
+      return CMailIterator();
+    }
+
+    // Otherwise, return an iterator to the outbox of the mailbox
+    return CMailIterator(mailbox->m_outbox);
+  }
+  CMailIterator inbox(const char *email) const
+  {
+    // Find the mailbox for the given email address
+    const Mailbox *mailbox = nullptr;
+    for (size_t i = 0; i < m_server.size(); i++)
+    {
+      if (m_server[i].m_user == email)
+      {
+        mailbox = &m_server[i];
+        break;
+      }
+    }
+
+    // If the mailbox doesn't exist, return an invalid iterator
+    if (mailbox == nullptr)
+    {
+      return CMailIterator();
+    }
+
+    // Otherwise, return an iterator to the inbox of the mailbox
+    return CMailIterator(mailbox->m_inbox);
+  }
 };
 
 #ifndef __PROGTEST__
