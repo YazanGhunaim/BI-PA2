@@ -82,7 +82,7 @@ public:
   }
   bool operator!=(const CString &other) const { return !(*this == other); }
   friend std::ostream &operator<<(std::ostream &os, const CString &str);
-  bool operator<(const CString &other) const { return strcmp(m_buffer, other.m_buffer); }
+  bool operator<(const CString &other) const { return strcmp(m_buffer, other.m_buffer) < 0; }
   bool operator>(const CString &other) const { return strcmp(m_buffer, other.m_buffer) > 0; }
 };
 
@@ -196,7 +196,7 @@ public:
   {
     return m_data + m_size;
   }
-  void insert(T *pos, const T &value)
+  T *insert(T *pos, const T &value)
   {
     size_t index = pos - m_data;
     if (m_size == m_capacity)
@@ -209,6 +209,7 @@ public:
     }
     m_data[index] = value;
     m_size++;
+    return m_data + index;
   }
 };
 
@@ -286,15 +287,16 @@ private:
     CString m_user;
     CArray<CMail> m_inbox;
     CArray<CMail> m_outbox;
-
+    Mailbox() : m_user(), m_inbox(), m_outbox() {}
+    Mailbox(const CString &user) : m_user(user), m_inbox(), m_outbox() {}
     friend bool operator<(const Mailbox &lhs, const Mailbox &rhs)
     {
-      return lhs < rhs;
+      return lhs.m_user < rhs.m_user;
     }
   };
   CArray<Mailbox> m_server;
 
-  int binary_search_user(const CString &target) const
+  int binary_search_new_user(const CString &target) const
   {
     int start = 0;
     int end = m_server.size() - 1;
@@ -316,7 +318,53 @@ private:
         end = mid - 1;
       }
     }
-    return -1;
+    return start;
+  }
+  bool binary_search_user(const CString &target) const
+  {
+    int start = 0;
+    int end = m_server.size() - 1;
+    int mid = 0;
+
+    while (start <= end)
+    {
+      mid = start + (end - start) / 2;
+      if (m_server[mid].m_user == target)
+      {
+        return true;
+      }
+      else if (m_server[mid].m_user < target)
+      {
+        start = mid + 1;
+      }
+      else
+      {
+        end = mid - 1;
+      }
+    }
+    return false;
+  }
+  Mailbox *insert_server(const CString &str)
+  {
+    int index = binary_search_new_user(str);
+    if (!binary_search_user(str))
+    {
+      Mailbox newMailbox{str};
+      auto it = m_server.insert(m_server.begin() + index, newMailbox);
+      return &(*it);
+    }
+    else
+    {
+      return &m_server[index];
+    }
+  }
+  void insert_outbox(Mailbox *person, const CMail &m)
+  {
+    person->m_outbox.push_back(m);
+  }
+  void insert_inbox(Mailbox *person, const CMail &m)
+  {
+    person->m_inbox.push_back(m);
   }
 
 public:
@@ -333,105 +381,60 @@ public:
   ~CMailServer(void) {}
   void sendMail(const CMail &m)
   {
-
-    // Find the sender mailbox
-    int sender_index = binary_search_user(m.from());
-    Mailbox *sender = nullptr;
-    for (size_t i = 0; i < m_server.size(); i++)
-    {
-      if (m_server[i].m_user == m.from())
-      {
-        cout << i << " " << sender_index << endl;
-        sender = &m_server[i];
-        break;
-      }
-    }
-
-    // Create the sender mailbox if it doesn't exist
-    if (sender == nullptr)
-    {
-      Mailbox newMailbox;
-      newMailbox.m_user = m.from();
-      m_server.push_back(newMailbox);
-      sender = &m_server[m_server.size() - 1];
-    }
-
-    // Add the mail to the sender's outbox in sorted order
-    int index = std::lower_bound(sender->m_outbox.begin(), sender->m_outbox.end(), m) - sender->m_outbox.begin();
-    sender->m_outbox.insert(sender->m_outbox.begin() + index, m);
-
-    // Find the receiver mailbox
-    int receiver_index = binary_search_user(m.to());
-    Mailbox *receiver = nullptr;
-    for (size_t i = 0; i < m_server.size(); i++)
-    {
-      if (m_server[i].m_user == m.to())
-      {
-        cout << i << " " << receiver_index << endl;
-        receiver = &m_server[i];
-        break;
-      }
-    }
-
-    // Create the receiver mailbox if it doesn't exist
-    if (receiver == nullptr)
-    {
-      Mailbox newMailbox;
-      newMailbox.m_user = m.to();
-      m_server.push_back(newMailbox);
-      receiver = &m_server[m_server.size() - 1];
-    }
-
-    // Add the mail to the receiver's inbox in sorted order
-    int index2 = std::lower_bound(receiver->m_inbox.begin(), receiver->m_inbox.end(), m) - receiver->m_inbox.begin();
-    receiver->m_inbox.insert(receiver->m_inbox.begin() + index2, m);
+    Mailbox *sender = insert_server(m.from());
+    insert_outbox(sender, m);
+    Mailbox *receiver = insert_server(m.to());
+    insert_inbox(receiver, m);
   }
   CMailIterator outbox(const char *email) const
   {
-    // Find the mailbox for the given email address
-    const Mailbox *mailbox = nullptr;
-    for (size_t i = 0; i < m_server.size(); i++)
-    {
-      if (m_server[i].m_user == email)
-      {
-        mailbox = &m_server[i];
-        break;
-      }
-    }
-
-    // If the mailbox doesn't exist, return an invalid iterator
-    if (mailbox == nullptr)
+    CString address{email};
+    if (!binary_search_user(address))
     {
       return CMailIterator();
     }
 
+    const Mailbox *mailbox = nullptr;
+    mailbox = &m_server[binary_search_new_user(address)];
     // Otherwise, return an iterator to the outbox of the mailbox
     return CMailIterator(mailbox->m_outbox);
   }
   CMailIterator inbox(const char *email) const
   {
-    // Find the mailbox for the given email address
-    const Mailbox *mailbox = nullptr;
-    for (size_t i = 0; i < m_server.size(); i++)
-    {
-      if (m_server[i].m_user == email)
-      {
-        mailbox = &m_server[i];
-        break;
-      }
-    }
-
-    // If the mailbox doesn't exist, return an invalid iterator
-    if (mailbox == nullptr)
+    CString address{email};
+    if (!binary_search_user(address))
     {
       return CMailIterator();
     }
 
-    // Otherwise, return an iterator to the inbox of the mailbox
+    const Mailbox *mailbox = nullptr;
+    mailbox = &m_server[binary_search_new_user(address)];
+
+    // Otherwise, return an iterator to the outbox of the mailbox
     return CMailIterator(mailbox->m_inbox);
   }
+  friend std::ostream &operator<<(std::ostream &os, const CMailServer &ms);
 };
 
+std::ostream &operator<<(std::ostream &os, const CMailServer &ms)
+{
+  for (const auto &x : ms.m_server)
+  {
+    os << x.m_user << endl;
+    os << "INBOX" << endl;
+    for (const auto &y : x.m_inbox)
+    {
+      cout << y.body() << endl;
+    }
+    os << "OUTBOX" << endl;
+    for (const auto &y : x.m_outbox)
+    {
+      cout << y.body() << endl;
+    }
+    os << endl;
+  }
+  return os;
+}
 #ifndef __PROGTEST__
 bool matchOutput(const CMail &m, const char *str)
 {
