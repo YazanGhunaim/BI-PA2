@@ -30,6 +30,7 @@ private:
     int m_min;
     int m_sec;
   };
+  
   date m_date;
 
 public:
