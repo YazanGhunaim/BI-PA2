@@ -45,24 +45,41 @@ class CComponent
 protected:
   int m_id;
   CRect m_pos;
+  CRect m_relPos;
 
 public:
-  CComponent(int id, const CRect &pos) : m_id(id), m_pos(pos) {}
-  CComponent(const CComponent &other) : m_id(other.m_id), m_pos(other.m_pos) {}
+  CComponent(int id, const CRect &pos) : m_id(id), m_pos(pos), m_relPos(pos) {}
+  CComponent(const CComponent &other) : m_id(other.m_id), m_pos(other.m_pos), m_relPos(other.m_relPos) {}
   bool equalID(int id) const { return m_id == id; }
   virtual ~CComponent() {}
   virtual CComponent *clone() const = 0; // uses copy constructor
+
   virtual void recalculatePosition(const CRect &windowPos)
   {
-    m_pos.m_X = (m_pos.m_X * windowPos.m_W) + windowPos.m_X;
-    m_pos.m_Y = (m_pos.m_Y * windowPos.m_H) + windowPos.m_Y;
-    m_pos.m_W = (m_pos.m_W * windowPos.m_W);
-    m_pos.m_H = (m_pos.m_H * windowPos.m_H);
+    m_pos.m_X = (m_relPos.m_X * windowPos.m_W) + windowPos.m_X;
+    m_pos.m_Y = (m_relPos.m_Y * windowPos.m_H) + windowPos.m_Y;
+    m_pos.m_W = (m_relPos.m_W * windowPos.m_W);
+    m_pos.m_H = (m_relPos.m_H * windowPos.m_H);
   }
 
   virtual operator CComponent *() = 0;
-  virtual std::ostream &print(std::ostream &os) const = 0;
-  friend std::ostream &operator<<(std::ostream &os, const CComponent &cmp) { return cmp.print(os); }
+
+  virtual std::string getType() const
+  {
+    return "Component";
+  }
+  virtual std::string getName() const
+  {
+    return "";
+  }
+
+  virtual std::ostream &print(std::ostream &os, size_t indent, bool prefix = false) const
+  {
+    return os << "[" << m_id << "] "
+              << getType()
+              << " \"" << getName() << "\" " << m_pos;
+  }
+  friend std::ostream &operator<<(std::ostream &os, const CComponent &cmp) { return cmp.print(os, 0); }
 };
 
 class CButton : public CComponent
@@ -88,19 +105,16 @@ public:
 
   operator CComponent *() override { return this->clone(); }
 
-  // << overload
-  std::ostream &print(std::ostream &os) const override
-  {
-    return os << "[" << m_id << "] "
-              << "Button "
-              << "\"" << m_name << "\" " << m_pos;
-  }
+  std::string getType() const override { return "Button"; }
+
+  std::string getName() const override { return m_name; }
+
   friend std::ostream &operator<<(std::ostream &os, const CButton &button);
 };
 
 std::ostream &operator<<(std::ostream &os, const CButton &button)
 {
-  return button.print(os);
+  return button.print(os, 0);
 }
 
 class CInput : public CComponent
@@ -123,24 +137,20 @@ public:
   }
   operator CComponent *() override { return this->clone(); }
 
-  // setValue
   void setValue(const std::string &val) { m_value = val; }
 
-  // getValue
   std::string getValue() const { return m_value; }
 
-  std::ostream &print(std::ostream &os) const override
-  {
-    return os << "[" << m_id << "] "
-              << "Input "
-              << "\"" << m_value << "\" " << m_pos;
-  }
+  std::string getType() const override { return "Input"; }
+
+  std::string getName() const override { return m_value; }
+
   friend std::ostream &operator<<(std::ostream &os, const CInput &input);
 };
 
 std::ostream &operator<<(std::ostream &os, const CInput &input)
 {
-  return input.print(os);
+  return input.print(os, 0);
 }
 
 class CLabel : public CComponent
@@ -158,24 +168,20 @@ public:
   ~CLabel() override {}
 
   operator CComponent *() override { return new CLabel(*this); }
+
   CComponent *clone() const override
   {
     return new CLabel(*this);
   }
 
-  std::ostream &print(std::ostream &os) const override
-  {
-    return os << "[" << m_id << "] "
-              << "Label "
-              << "\"" << m_label << "\" " << m_pos;
-  }
-
+  std::string getType() const override { return "Label"; }
+  std::string getName() const override { return m_label; }
   friend std::ostream &operator<<(std::ostream &os, const CLabel &label);
 };
 
 std::ostream &operator<<(std::ostream &os, const CLabel &label)
 {
-  return label.print(os);
+  return label.print(os, 0);
 }
 
 class CComboBox : public CComponent
@@ -200,19 +206,22 @@ public:
     return new CComboBox(*this);
   }
   operator CComponent *() override { return this->clone(); }
-  // add
+
   CComboBox &add(const std::string &x)
   {
     m_options.push_back(x);
     return *this;
   }
-  // setSelected
+
   void setSelected(int x) { m_selected = x; }
-  // getSelected
-  std::string getSelected() const { return m_options[m_selected]; }
+
+  int getSelected() const { return m_selected; }
 
   std::vector<std::string> get_options() const { return m_options; }
-  std::ostream &print(std::ostream &os) const override
+
+  std::string getType() const override { return "ComboBox"; }
+
+  std::ostream &print(std::ostream &os, size_t indent, bool prefix = false) const override
   {
     os << "[" << m_id << "] "
        << "ComboBox " << m_pos << std::endl;
@@ -220,6 +229,21 @@ public:
     // printing options in box
     for (const auto &option : m_options)
     {
+      if (prefix)
+      {
+        os << "|";
+        for (size_t i = indent - 1; i > 0; i--)
+        {
+          os << " ";
+        }
+      }
+      else
+      {
+        for (size_t i = indent; i > 0; i--)
+        {
+          os << " ";
+        }
+      }
       if (option == m_options[m_selected])
       {
         os << "+->" << option << "<\n";
@@ -237,7 +261,7 @@ public:
 
 std::ostream &operator<<(std::ostream &os, const CComboBox &box)
 {
-  return box.print(os);
+  return box.print(os, 0);
 }
 
 class CWindow
@@ -291,7 +315,13 @@ public:
     return *this;
   }
 
-  ~CWindow() {}
+  ~CWindow()
+  {
+    for (auto &control : m_controls)
+    {
+      delete control;
+    }
+  }
 
   // add
   CWindow &add(CComponent *x)
@@ -324,32 +354,43 @@ public:
     }
   }
 
+  std::ostream &print(std::ostream &os, size_t indent) const
+  {
+    os << "[" << m_id << "] "
+       << "Window "
+       << "\"" << m_title << "\" " << m_pos << std::endl;
+
+    // print controls
+    for (const auto &control : m_controls)
+    {
+      // print children
+      if (dynamic_cast<CComboBox *>(control))
+      {
+        os << "+- ";
+        if (control != m_controls.back())
+        {
+          control->print(os, 3, true);
+        }
+        else
+        {
+          control->print(os, 3);
+        }
+      }
+      else
+      {
+        os << "+- ";
+        control->print(os, 3);
+        os << std::endl;
+      }
+    }
+    return os;
+  }
   friend std::ostream &operator<<(std::ostream &os, const CWindow &window);
 };
 
 std::ostream &operator<<(std::ostream &os, const CWindow &window)
 {
-  os << "[" << window.m_id << "] "
-     << "Window "
-     << "\"" << window.m_title << "\" " << window.m_pos << std::endl;
-
-  // print controls
-  for (const auto &control : window.m_controls)
-  {
-    // print children
-    if (auto comboBox = dynamic_cast<CComboBox *>(control))
-    {
-      os << "+- ";
-      control->print(os);
-    }
-    else
-    {
-      os << "+- ";
-      control->print(os);
-      os << std::endl;
-    }
-  }
-  return os;
+  return window.print(os, 0);
 }
 
 #ifndef __PROGTEST__
@@ -371,74 +412,71 @@ int main(void)
   a.add(CLabel(10, CRect(0.1, 0.1, 0.2, 0.1), "Username:"));
   a.add(CInput(11, CRect(0.4, 0.1, 0.5, 0.1), "chucknorris"));
   a.add(CComboBox(20, CRect(0.1, 0.3, 0.8, 0.1)).add("Karate").add("Judo").add("Box").add("Progtest"));
-
-  cout << toString(a);
-  // assert(toString(a) ==
-  //        "[0] Window \"Sample window\" (10,10,600,480)\n"
-  //        "+- [1] Button \"Ok\" (70,394,180,48)\n"
-  //        "+- [2] Button \"Cancel\" (370,394,180,48)\n"
-  //        "+- [10] Label \"Username:\" (70,58,120,48)\n"
-  //        "+- [11] Input \"chucknorris\" (250,58,300,48)\n"
-  //        "+- [20] ComboBox (70,154,480,48)\n"
-  //        "   +->Karate<\n"
-  //        "   +- Judo\n"
-  //        "   +- Box\n"
-  //        "   +- Progtest\n");
-
-  // CWindow b = a;
-  // assert(toString(*b.search(20)) ==
-  //        "[20] ComboBox (70,154,480,48)\n"
-  //        "+->Karate<\n"
-  //        "+- Judo\n"
-  //        "+- Box\n"
-  //        "+- Progtest\n");
-  // assert(dynamic_cast<CComboBox &>(*b.search(20)).getSelected() == 0);
-  // dynamic_cast<CComboBox &>(*b.search(20)).setSelected(3);
-  // assert(dynamic_cast<CInput &>(*b.search(11)).getValue() == "chucknorris");
-  // dynamic_cast<CInput &>(*b.search(11)).setValue("chucknorris@fit.cvut.cz");
-  // b.add(CComboBox(21, CRect(0.1, 0.5, 0.8, 0.1)).add("PA2").add("OSY").add("Both"));
-  // assert(toString(b) ==
-  //        "[0] Window \"Sample window\" (10,10,600,480)\n"
-  //        "+- [1] Button \"Ok\" (70,394,180,48)\n"
-  //        "+- [2] Button \"Cancel\" (370,394,180,48)\n"
-  //        "+- [10] Label \"Username:\" (70,58,120,48)\n"
-  //        "+- [11] Input \"chucknorris@fit.cvut.cz\" (250,58,300,48)\n"
-  //        "+- [20] ComboBox (70,154,480,48)\n"
-  //        "|  +- Karate\n"
-  //        "|  +- Judo\n"
-  //        "|  +- Box\n"
-  //        "|  +->Progtest<\n"
-  //        "+- [21] ComboBox (70,250,480,48)\n"
-  //        "   +->PA2<\n"
-  //        "   +- OSY\n"
-  //        "   +- Both\n");
-  // assert(toString(a) ==
-  //        "[0] Window \"Sample window\" (10,10,600,480)\n"
-  //        "+- [1] Button \"Ok\" (70,394,180,48)\n"
-  //        "+- [2] Button \"Cancel\" (370,394,180,48)\n"
-  //        "+- [10] Label \"Username:\" (70,58,120,48)\n"
-  //        "+- [11] Input \"chucknorris\" (250,58,300,48)\n"
-  //        "+- [20] ComboBox (70,154,480,48)\n"
-  //        "   +->Karate<\n"
-  //        "   +- Judo\n"
-  //        "   +- Box\n"
-  //        "   +- Progtest\n");
-  // b.setPosition(CRect(20, 30, 640, 520));
-  // assert(toString(b) ==
-  //        "[0] Window \"Sample window\" (20,30,640,520)\n"
-  //        "+- [1] Button \"Ok\" (84,446,192,52)\n"
-  //        "+- [2] Button \"Cancel\" (404,446,192,52)\n"
-  //        "+- [10] Label \"Username:\" (84,82,128,52)\n"
-  //        "+- [11] Input \"chucknorris@fit.cvut.cz\" (276,82,320,52)\n"
-  //        "+- [20] ComboBox (84,186,512,52)\n"
-  //        "|  +- Karate\n"
-  //        "|  +- Judo\n"
-  //        "|  +- Box\n"
-  //        "|  +->Progtest<\n"
-  //        "+- [21] ComboBox (84,290,512,52)\n"
-  //        "   +->PA2<\n"
-  //        "   +- OSY\n"
-  //        "   +- Both\n");
+  assert(toString(a) ==
+         "[0] Window \"Sample window\" (10,10,600,480)\n"
+         "+- [1] Button \"Ok\" (70,394,180,48)\n"
+         "+- [2] Button \"Cancel\" (370,394,180,48)\n"
+         "+- [10] Label \"Username:\" (70,58,120,48)\n"
+         "+- [11] Input \"chucknorris\" (250,58,300,48)\n"
+         "+- [20] ComboBox (70,154,480,48)\n"
+         "   +->Karate<\n"
+         "   +- Judo\n"
+         "   +- Box\n"
+         "   +- Progtest\n");
+  CWindow b = a;
+  assert(toString(*b.search(20)) ==
+         "[20] ComboBox (70,154,480,48)\n"
+         "+->Karate<\n"
+         "+- Judo\n"
+         "+- Box\n"
+         "+- Progtest\n");
+  assert(dynamic_cast<CComboBox &>(*b.search(20)).getSelected() == 0);
+  dynamic_cast<CComboBox &>(*b.search(20)).setSelected(3);
+  assert(dynamic_cast<CInput &>(*b.search(11)).getValue() == "chucknorris");
+  dynamic_cast<CInput &>(*b.search(11)).setValue("chucknorris@fit.cvut.cz");
+  b.add(CComboBox(21, CRect(0.1, 0.5, 0.8, 0.1)).add("PA2").add("OSY").add("Both"));
+  assert(toString(b) ==
+         "[0] Window \"Sample window\" (10,10,600,480)\n"
+         "+- [1] Button \"Ok\" (70,394,180,48)\n"
+         "+- [2] Button \"Cancel\" (370,394,180,48)\n"
+         "+- [10] Label \"Username:\" (70,58,120,48)\n"
+         "+- [11] Input \"chucknorris@fit.cvut.cz\" (250,58,300,48)\n"
+         "+- [20] ComboBox (70,154,480,48)\n"
+         "|  +- Karate\n"
+         "|  +- Judo\n"
+         "|  +- Box\n"
+         "|  +->Progtest<\n"
+         "+- [21] ComboBox (70,250,480,48)\n"
+         "   +->PA2<\n"
+         "   +- OSY\n"
+         "   +- Both\n");
+  assert(toString(a) ==
+         "[0] Window \"Sample window\" (10,10,600,480)\n"
+         "+- [1] Button \"Ok\" (70,394,180,48)\n"
+         "+- [2] Button \"Cancel\" (370,394,180,48)\n"
+         "+- [10] Label \"Username:\" (70,58,120,48)\n"
+         "+- [11] Input \"chucknorris\" (250,58,300,48)\n"
+         "+- [20] ComboBox (70,154,480,48)\n"
+         "   +->Karate<\n"
+         "   +- Judo\n"
+         "   +- Box\n"
+         "   +- Progtest\n");
+  b.setPosition(CRect(20, 30, 640, 520));
+  assert(toString(b) ==
+         "[0] Window \"Sample window\" (20,30,640,520)\n"
+         "+- [1] Button \"Ok\" (84,446,192,52)\n"
+         "+- [2] Button \"Cancel\" (404,446,192,52)\n"
+         "+- [10] Label \"Username:\" (84,82,128,52)\n"
+         "+- [11] Input \"chucknorris@fit.cvut.cz\" (276,82,320,52)\n"
+         "+- [20] ComboBox (84,186,512,52)\n"
+         "|  +- Karate\n"
+         "|  +- Judo\n"
+         "|  +- Box\n"
+         "|  +->Progtest<\n"
+         "+- [21] ComboBox (84,290,512,52)\n"
+         "   +->PA2<\n"
+         "   +- OSY\n"
+         "   +- Both\n");
   return EXIT_SUCCESS;
 }
 #endif /* __PROGTEST__ */
