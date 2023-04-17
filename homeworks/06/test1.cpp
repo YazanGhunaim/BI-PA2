@@ -1,0 +1,760 @@
+#ifndef __PROGTEST__
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
+#include <cctype>
+#include <cmath>
+#include <cassert>
+#include <typeinfo>
+#include <unistd.h>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <vector>
+#include <list>
+#include <string>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <functional>
+#include <memory>
+#include <algorithm>
+#include <type_traits>
+using namespace std;
+
+class CRect
+{
+public:
+  CRect(double x,
+        double y,
+        double w,
+        double h)
+      : m_X(x),
+        m_Y(y),
+        m_W(w),
+        m_H(h)
+  {
+  }
+  friend ostream &operator<<(ostream &os,
+                             const CRect &x)
+  {
+    return os << '(' << x.m_X << ',' << x.m_Y << ',' << x.m_W << ',' << x.m_H << ')';
+  }
+  double m_X;
+  double m_Y;
+  double m_W;
+  double m_H;
+};
+#endif /* __PROGTEST__ */
+
+class CComponent
+{
+protected:
+  int m_id;
+  CRect m_pos;
+  CRect m_relPos;
+
+public:
+  CComponent(int id, const CRect &pos) : m_id(id), m_pos(pos), m_relPos(pos) {}
+  CComponent(const CComponent &other) : m_id(other.m_id), m_pos(other.m_pos), m_relPos(other.m_relPos) {}
+  bool equalID(int id) const { return m_id == id; }
+  virtual ~CComponent() {}
+  virtual CComponent *clone() const = 0; // uses copy constructor
+
+  virtual void recalculatePosition(const CRect &windowPos)
+  {
+    m_pos.m_X = (m_relPos.m_X * windowPos.m_W) + windowPos.m_X;
+    m_pos.m_Y = (m_relPos.m_Y * windowPos.m_H) + windowPos.m_Y;
+    m_pos.m_W = (m_relPos.m_W * windowPos.m_W);
+    m_pos.m_H = (m_relPos.m_H * windowPos.m_H);
+  }
+
+  virtual operator CComponent *() = 0;
+
+  virtual std::string getType() const
+  {
+    return "Component";
+  }
+  virtual std::string getName() const
+  {
+    return "";
+  }
+
+  virtual std::ostream &print(std::ostream &os, size_t indent, bool prefix = false) const
+  {
+    return os << "[" << m_id << "] "
+              << getType()
+              << " \"" << getName() << "\" " << m_pos;
+  }
+  friend std::ostream &operator<<(std::ostream &os, const CComponent &cmp) { return cmp.print(os, 0); }
+};
+
+class CButton : public CComponent
+{
+private:
+  std::string m_name;
+
+public:
+  CButton(int id, const CRect &relPos, const string &name)
+      : CComponent(id, relPos), m_name(name) {}
+
+  CButton(const CButton &other) // cpy constructor
+      : CComponent(other), m_name(other.m_name)
+  {
+  }
+
+  ~CButton() override {}
+
+  CComponent *clone() const override
+  {
+    return new CButton(*this);
+  }
+
+  operator CComponent *() override { return this->clone(); }
+
+  std::string getType() const override { return "Button"; }
+
+  std::string getName() const override { return m_name; }
+
+  friend std::ostream &operator<<(std::ostream &os, const CButton &button);
+};
+
+std::ostream &operator<<(std::ostream &os, const CButton &button)
+{
+  return button.print(os, 0);
+}
+
+class CInput : public CComponent
+{
+private:
+  std::string m_value;
+
+public:
+  CInput(int id, const CRect &relPos, const string &value)
+      : CComponent(id, relPos), m_value(value) {}
+
+  CInput(const CInput &other)
+      : CComponent(other), m_value(other.m_value) {}
+
+  ~CInput() override {}
+
+  CComponent *clone() const override
+  {
+    return new CInput(*this);
+  }
+  operator CComponent *() override { return this->clone(); }
+
+  void setValue(const std::string &val) { m_value = val; }
+
+  std::string getValue() const { return m_value; }
+
+  std::string getType() const override { return "Input"; }
+
+  std::string getName() const override { return m_value; }
+
+  friend std::ostream &operator<<(std::ostream &os, const CInput &input);
+};
+
+std::ostream &operator<<(std::ostream &os, const CInput &input)
+{
+  return input.print(os, 0);
+}
+
+class CLabel : public CComponent
+{
+private:
+  std::string m_label;
+
+public:
+  CLabel(int id, const CRect &relPos, const string &label)
+      : CComponent(id, relPos), m_label(label) {}
+
+  CLabel(const CLabel &other)
+      : CComponent(other), m_label(other.m_label) {}
+
+  ~CLabel() override {}
+
+  operator CComponent *() override { return new CLabel(*this); }
+
+  CComponent *clone() const override
+  {
+    return new CLabel(*this);
+  }
+
+  std::string getType() const override { return "Label"; }
+  std::string getName() const override { return m_label; }
+  friend std::ostream &operator<<(std::ostream &os, const CLabel &label);
+};
+
+std::ostream &operator<<(std::ostream &os, const CLabel &label)
+{
+  return label.print(os, 0);
+}
+
+class CComboBox : public CComponent
+{
+private:
+  std::vector<std::string> m_options;
+  int m_selected;
+
+public:
+  CComboBox(int id, const CRect &relPos)
+      : CComponent(id, relPos), m_selected(0) {}
+
+  CComboBox(const CComboBox &other)
+      : CComponent(other), m_options(other.m_options), m_selected(other.m_selected) {}
+
+  ~CComboBox() override
+  {
+  }
+
+  CComponent *clone() const override
+  {
+    return new CComboBox(*this);
+  }
+  operator CComponent *() override { return this->clone(); }
+
+  CComboBox &add(const std::string &x)
+  {
+    m_options.push_back(x);
+    return *this;
+  }
+
+  void setSelected(int x) { m_selected = x; }
+
+  int getSelected() const { return m_selected; }
+
+  std::vector<std::string> get_options() const { return m_options; }
+
+  std::string getType() const override { return "ComboBox"; }
+
+  std::ostream &print(std::ostream &os, size_t indent, bool prefix = false) const override
+  {
+    os << "[" << m_id << "] "
+       << "ComboBox " << m_pos << std::endl;
+
+    // printing options in box
+    for (const auto &option : m_options)
+    {
+      if (prefix)
+      {
+        os << "|";
+        for (size_t i = indent - 1; i > 0; i--)
+        {
+          os << " ";
+        }
+      }
+      else
+      {
+        for (size_t i = indent; i > 0; i--)
+        {
+          os << " ";
+        }
+      }
+      if (option == m_options[m_selected])
+      {
+        os << "+->" << option << "<\n";
+      }
+      else
+      {
+        os << "+- " << option << "\n";
+      }
+    }
+    return os;
+  }
+
+  friend std::ostream &operator<<(std::ostream &os, const CComboBox &box);
+};
+
+std::ostream &operator<<(std::ostream &os, const CComboBox &box)
+{
+  return box.print(os, 0);
+}
+
+class CPanel
+{
+public:
+  CPanel(int id, const CRect &relPos);
+  // add
+};
+
+class CWindow
+{
+private:
+  int m_id;
+  std::string m_title;
+  CRect m_pos;
+
+  // controls
+  std::vector<CComponent *> m_controls;
+
+public:
+  CWindow(int id, const string &title, const CRect &absPos)
+      : m_id(id), m_title(title), m_pos(absPos) {}
+
+  // copy constructor
+  CWindow(const CWindow &other)
+      : m_id(other.m_id), m_title(other.m_title), m_pos(other.m_pos)
+  {
+    // copy controls
+    for (const auto &control : other.m_controls)
+    {
+      m_controls.push_back(control->clone());
+    }
+  }
+
+  // copy assignment operator
+  CWindow &operator=(const CWindow &other)
+  {
+    if (this != &other)
+    {
+      // copy id, title, and position
+      m_id = other.m_id;
+      m_title = other.m_title;
+      m_pos = other.m_pos;
+
+      // delete old controls
+      for (auto &control : m_controls)
+      {
+        delete control;
+      }
+      m_controls.clear();
+
+      // copy new controls
+      for (const auto &control : other.m_controls)
+      {
+        m_controls.push_back(control->clone());
+      }
+    }
+    return *this;
+  }
+
+  ~CWindow()
+  {
+    for (auto &control : m_controls)
+    {
+      delete control;
+    }
+  }
+
+  // add
+  CWindow &add(CComponent *x)
+  {
+    x->recalculatePosition(m_pos);
+    m_controls.push_back(x);
+    return *this;
+  }
+
+  // search
+  CComponent *search(int id)
+  {
+    for (const auto &component : m_controls)
+    {
+      if (component->equalID(id))
+      {
+        return component;
+      }
+    }
+    return nullptr;
+  }
+
+  // setPosition
+  void setPosition(const CRect &newPos)
+  {
+    m_pos = newPos;
+    for (auto &component : m_controls)
+    {
+      component->recalculatePosition(m_pos);
+    }
+  }
+
+  std::ostream &print(std::ostream &os, size_t indent) const
+  {
+    os << "[" << m_id << "] "
+       << "Window "
+       << "\"" << m_title << "\" " << m_pos << std::endl;
+
+    // print controls
+    for (const auto &control : m_controls)
+    {
+      // print children
+      if (dynamic_cast<CComboBox *>(control))
+      {
+        os << "+- ";
+        if (control != m_controls.back())
+        {
+          control->print(os, 3, true);
+        }
+        else
+        {
+          control->print(os, 3);
+        }
+      }
+      else
+      {
+        os << "+- ";
+        control->print(os, 3);
+        os << std::endl;
+      }
+    }
+    return os;
+  }
+  friend std::ostream &operator<<(std::ostream &os, const CWindow &window);
+};
+
+std::ostream &operator<<(std::ostream &os, const CWindow &window)
+{
+  return window.print(os, 0);
+}
+
+#ifndef __PROGTEST__
+template <typename T_>
+string toString(const T_ &x)
+{
+  ostringstream oss;
+  oss << x;
+  return oss.str();
+}
+
+int main(void)
+{
+  assert(sizeof(CButton) - sizeof(string) < sizeof(CComboBox) - sizeof(vector<string>));
+  assert(sizeof(CInput) - sizeof(string) < sizeof(CComboBox) - sizeof(vector<string>));
+  assert(sizeof(CLabel) - sizeof(string) < sizeof(CComboBox) - sizeof(vector<string>));
+  assert(sizeof(CButton) - sizeof(string) <= sizeof(CPanel) - sizeof(vector<void *>));
+  assert(sizeof(CInput) - sizeof(string) <= sizeof(CPanel) - sizeof(vector<void *>));
+  assert(sizeof(CLabel) - sizeof(string) <= sizeof(CPanel) - sizeof(vector<void *>));
+  // CWindow a(0, "Sample window", CRect(10, 10, 600, 480));
+  // a.add(CButton(1, CRect(0.1, 0.8, 0.3, 0.1), "Ok")).add(CButton(2, CRect(0.6, 0.8, 0.3, 0.1), "Cancel"));
+  // a.add(CLabel(10, CRect(0.1, 0.1, 0.2, 0.1), "Username:"));
+  // a.add(CInput(11, CRect(0.4, 0.1, 0.5, 0.1), "chucknorris"));
+  // a.add(CPanel(12, CRect(0.1, 0.3, 0.8, 0.7)).add(CComboBox(20, CRect(0.1, 0.3, 0.8, 0.1)).add("Karate").add("Judo").add("Box").add("Progtest")));
+  // assert(toString(a) ==
+  //        "[0] Window \"Sample window\" (10,10,600,480)\n"
+  //        "+- [1] Button \"Ok\" (70,394,180,48)\n"
+  //        "+- [2] Button \"Cancel\" (370,394,180,48)\n"
+  //        "+- [10] Label \"Username:\" (70,58,120,48)\n"
+  //        "+- [11] Input \"chucknorris\" (250,58,300,48)\n"
+  //        "+- [12] Panel (70,154,480,336)\n"
+  //        "   +- [20] ComboBox (118,254.8,384,33.6)\n"
+  //        "      +->Karate<\n"
+  //        "      +- Judo\n"
+  //        "      +- Box\n"
+  //        "      +- Progtest\n");
+  // CWindow b = a;
+  // assert(toString(*b.search(20)) ==
+  //        "[20] ComboBox (118,254.8,384,33.6)\n"
+  //        "+->Karate<\n"
+  //        "+- Judo\n"
+  //        "+- Box\n"
+  //        "+- Progtest\n");
+  // assert(dynamic_cast<CComboBox &>(*b.search(20)).getSelected() == 0);
+  // dynamic_cast<CComboBox &>(*b.search(20)).setSelected(3);
+  // assert(dynamic_cast<CInput &>(*b.search(11)).getValue() == "chucknorris");
+  // dynamic_cast<CInput &>(*b.search(11)).setValue("chucknorris@fit.cvut.cz");
+  // CPanel &p = dynamic_cast<CPanel &>(*b.search(12));
+  // p.add(CComboBox(21, CRect(0.1, 0.5, 0.8, 0.1)).add("PA2").add("OSY").add("Both"));
+  // assert(toString(b) ==
+  //        "[0] Window \"Sample window\" (10,10,600,480)\n"
+  //        "+- [1] Button \"Ok\" (70,394,180,48)\n"
+  //        "+- [2] Button \"Cancel\" (370,394,180,48)\n"
+  //        "+- [10] Label \"Username:\" (70,58,120,48)\n"
+  //        "+- [11] Input \"chucknorris@fit.cvut.cz\" (250,58,300,48)\n"
+  //        "+- [12] Panel (70,154,480,336)\n"
+  //        "   +- [20] ComboBox (118,254.8,384,33.6)\n"
+  //        "   |  +- Karate\n"
+  //        "   |  +- Judo\n"
+  //        "   |  +- Box\n"
+  //        "   |  +->Progtest<\n"
+  //        "   +- [21] ComboBox (118,322,384,33.6)\n"
+  //        "      +->PA2<\n"
+  //        "      +- OSY\n"
+  //        "      +- Both\n");
+  // assert(toString(a) ==
+  //        "[0] Window \"Sample window\" (10,10,600,480)\n"
+  //        "+- [1] Button \"Ok\" (70,394,180,48)\n"
+  //        "+- [2] Button \"Cancel\" (370,394,180,48)\n"
+  //        "+- [10] Label \"Username:\" (70,58,120,48)\n"
+  //        "+- [11] Input \"chucknorris\" (250,58,300,48)\n"
+  //        "+- [12] Panel (70,154,480,336)\n"
+  //        "   +- [20] ComboBox (118,254.8,384,33.6)\n"
+  //        "      +->Karate<\n"
+  //        "      +- Judo\n"
+  //        "      +- Box\n"
+  //        "      +- Progtest\n");
+  // assert(toString(p) ==
+  //        "[12] Panel (70,154,480,336)\n"
+  //        "+- [20] ComboBox (118,254.8,384,33.6)\n"
+  //        "|  +- Karate\n"
+  //        "|  +- Judo\n"
+  //        "|  +- Box\n"
+  //        "|  +->Progtest<\n"
+  //        "+- [21] ComboBox (118,322,384,33.6)\n"
+  //        "   +->PA2<\n"
+  //        "   +- OSY\n"
+  //        "   +- Both\n");
+  // b.setPosition(CRect(20, 30, 640, 520));
+  // assert(toString(b) ==
+  //        "[0] Window \"Sample window\" (20,30,640,520)\n"
+  //        "+- [1] Button \"Ok\" (84,446,192,52)\n"
+  //        "+- [2] Button \"Cancel\" (404,446,192,52)\n"
+  //        "+- [10] Label \"Username:\" (84,82,128,52)\n"
+  //        "+- [11] Input \"chucknorris@fit.cvut.cz\" (276,82,320,52)\n"
+  //        "+- [12] Panel (84,186,512,364)\n"
+  //        "   +- [20] ComboBox (135.2,295.2,409.6,36.4)\n"
+  //        "   |  +- Karate\n"
+  //        "   |  +- Judo\n"
+  //        "   |  +- Box\n"
+  //        "   |  +->Progtest<\n"
+  //        "   +- [21] ComboBox (135.2,368,409.6,36.4)\n"
+  //        "      +->PA2<\n"
+  //        "      +- OSY\n"
+  //        "      +- Both\n");
+  // p.add(p);
+  // assert(toString(p) ==
+  //        "[12] Panel (84,186,512,364)\n"
+  //        "+- [20] ComboBox (135.2,295.2,409.6,36.4)\n"
+  //        "|  +- Karate\n"
+  //        "|  +- Judo\n"
+  //        "|  +- Box\n"
+  //        "|  +->Progtest<\n"
+  //        "+- [21] ComboBox (135.2,368,409.6,36.4)\n"
+  //        "|  +->PA2<\n"
+  //        "|  +- OSY\n"
+  //        "|  +- Both\n"
+  //        "+- [12] Panel (135.2,295.2,409.6,254.8)\n"
+  //        "   +- [20] ComboBox (176.16,371.64,327.68,25.48)\n"
+  //        "   |  +- Karate\n"
+  //        "   |  +- Judo\n"
+  //        "   |  +- Box\n"
+  //        "   |  +->Progtest<\n"
+  //        "   +- [21] ComboBox (176.16,422.6,327.68,25.48)\n"
+  //        "      +->PA2<\n"
+  //        "      +- OSY\n"
+  //        "      +- Both\n");
+  // p.add(p);
+  // assert(toString(p) ==
+  //        "[12] Panel (84,186,512,364)\n"
+  //        "+- [20] ComboBox (135.2,295.2,409.6,36.4)\n"
+  //        "|  +- Karate\n"
+  //        "|  +- Judo\n"
+  //        "|  +- Box\n"
+  //        "|  +->Progtest<\n"
+  //        "+- [21] ComboBox (135.2,368,409.6,36.4)\n"
+  //        "|  +->PA2<\n"
+  //        "|  +- OSY\n"
+  //        "|  +- Both\n"
+  //        "+- [12] Panel (135.2,295.2,409.6,254.8)\n"
+  //        "|  +- [20] ComboBox (176.16,371.64,327.68,25.48)\n"
+  //        "|  |  +- Karate\n"
+  //        "|  |  +- Judo\n"
+  //        "|  |  +- Box\n"
+  //        "|  |  +->Progtest<\n"
+  //        "|  +- [21] ComboBox (176.16,422.6,327.68,25.48)\n"
+  //        "|     +->PA2<\n"
+  //        "|     +- OSY\n"
+  //        "|     +- Both\n"
+  //        "+- [12] Panel (135.2,295.2,409.6,254.8)\n"
+  //        "   +- [20] ComboBox (176.16,371.64,327.68,25.48)\n"
+  //        "   |  +- Karate\n"
+  //        "   |  +- Judo\n"
+  //        "   |  +- Box\n"
+  //        "   |  +->Progtest<\n"
+  //        "   +- [21] ComboBox (176.16,422.6,327.68,25.48)\n"
+  //        "   |  +->PA2<\n"
+  //        "   |  +- OSY\n"
+  //        "   |  +- Both\n"
+  //        "   +- [12] Panel (176.16,371.64,327.68,178.36)\n"
+  //        "      +- [20] ComboBox (208.928,425.148,262.144,17.836)\n"
+  //        "      |  +- Karate\n"
+  //        "      |  +- Judo\n"
+  //        "      |  +- Box\n"
+  //        "      |  +->Progtest<\n"
+  //        "      +- [21] ComboBox (208.928,460.82,262.144,17.836)\n"
+  //        "         +->PA2<\n"
+  //        "         +- OSY\n"
+  //        "         +- Both\n");
+  // p.add(p);
+  // assert(toString(p) ==
+  //        "[12] Panel (84,186,512,364)\n"
+  //        "+- [20] ComboBox (135.2,295.2,409.6,36.4)\n"
+  //        "|  +- Karate\n"
+  //        "|  +- Judo\n"
+  //        "|  +- Box\n"
+  //        "|  +->Progtest<\n"
+  //        "+- [21] ComboBox (135.2,368,409.6,36.4)\n"
+  //        "|  +->PA2<\n"
+  //        "|  +- OSY\n"
+  //        "|  +- Both\n"
+  //        "+- [12] Panel (135.2,295.2,409.6,254.8)\n"
+  //        "|  +- [20] ComboBox (176.16,371.64,327.68,25.48)\n"
+  //        "|  |  +- Karate\n"
+  //        "|  |  +- Judo\n"
+  //        "|  |  +- Box\n"
+  //        "|  |  +->Progtest<\n"
+  //        "|  +- [21] ComboBox (176.16,422.6,327.68,25.48)\n"
+  //        "|     +->PA2<\n"
+  //        "|     +- OSY\n"
+  //        "|     +- Both\n"
+  //        "+- [12] Panel (135.2,295.2,409.6,254.8)\n"
+  //        "|  +- [20] ComboBox (176.16,371.64,327.68,25.48)\n"
+  //        "|  |  +- Karate\n"
+  //        "|  |  +- Judo\n"
+  //        "|  |  +- Box\n"
+  //        "|  |  +->Progtest<\n"
+  //        "|  +- [21] ComboBox (176.16,422.6,327.68,25.48)\n"
+  //        "|  |  +->PA2<\n"
+  //        "|  |  +- OSY\n"
+  //        "|  |  +- Both\n"
+  //        "|  +- [12] Panel (176.16,371.64,327.68,178.36)\n"
+  //        "|     +- [20] ComboBox (208.928,425.148,262.144,17.836)\n"
+  //        "|     |  +- Karate\n"
+  //        "|     |  +- Judo\n"
+  //        "|     |  +- Box\n"
+  //        "|     |  +->Progtest<\n"
+  //        "|     +- [21] ComboBox (208.928,460.82,262.144,17.836)\n"
+  //        "|        +->PA2<\n"
+  //        "|        +- OSY\n"
+  //        "|        +- Both\n"
+  //        "+- [12] Panel (135.2,295.2,409.6,254.8)\n"
+  //        "   +- [20] ComboBox (176.16,371.64,327.68,25.48)\n"
+  //        "   |  +- Karate\n"
+  //        "   |  +- Judo\n"
+  //        "   |  +- Box\n"
+  //        "   |  +->Progtest<\n"
+  //        "   +- [21] ComboBox (176.16,422.6,327.68,25.48)\n"
+  //        "   |  +->PA2<\n"
+  //        "   |  +- OSY\n"
+  //        "   |  +- Both\n"
+  //        "   +- [12] Panel (176.16,371.64,327.68,178.36)\n"
+  //        "   |  +- [20] ComboBox (208.928,425.148,262.144,17.836)\n"
+  //        "   |  |  +- Karate\n"
+  //        "   |  |  +- Judo\n"
+  //        "   |  |  +- Box\n"
+  //        "   |  |  +->Progtest<\n"
+  //        "   |  +- [21] ComboBox (208.928,460.82,262.144,17.836)\n"
+  //        "   |     +->PA2<\n"
+  //        "   |     +- OSY\n"
+  //        "   |     +- Both\n"
+  //        "   +- [12] Panel (176.16,371.64,327.68,178.36)\n"
+  //        "      +- [20] ComboBox (208.928,425.148,262.144,17.836)\n"
+  //        "      |  +- Karate\n"
+  //        "      |  +- Judo\n"
+  //        "      |  +- Box\n"
+  //        "      |  +->Progtest<\n"
+  //        "      +- [21] ComboBox (208.928,460.82,262.144,17.836)\n"
+  //        "      |  +->PA2<\n"
+  //        "      |  +- OSY\n"
+  //        "      |  +- Both\n"
+  //        "      +- [12] Panel (208.928,425.148,262.144,124.852)\n"
+  //        "         +- [20] ComboBox (235.142,462.604,209.715,12.4852)\n"
+  //        "         |  +- Karate\n"
+  //        "         |  +- Judo\n"
+  //        "         |  +- Box\n"
+  //        "         |  +->Progtest<\n"
+  //        "         +- [21] ComboBox (235.142,487.574,209.715,12.4852)\n"
+  //        "            +->PA2<\n"
+  //        "            +- OSY\n"
+  //        "            +- Both\n");
+  // assert(toString(b) ==
+  //        "[0] Window \"Sample window\" (20,30,640,520)\n"
+  //        "+- [1] Button \"Ok\" (84,446,192,52)\n"
+  //        "+- [2] Button \"Cancel\" (404,446,192,52)\n"
+  //        "+- [10] Label \"Username:\" (84,82,128,52)\n"
+  //        "+- [11] Input \"chucknorris@fit.cvut.cz\" (276,82,320,52)\n"
+  //        "+- [12] Panel (84,186,512,364)\n"
+  //        "   +- [20] ComboBox (135.2,295.2,409.6,36.4)\n"
+  //        "   |  +- Karate\n"
+  //        "   |  +- Judo\n"
+  //        "   |  +- Box\n"
+  //        "   |  +->Progtest<\n"
+  //        "   +- [21] ComboBox (135.2,368,409.6,36.4)\n"
+  //        "   |  +->PA2<\n"
+  //        "   |  +- OSY\n"
+  //        "   |  +- Both\n"
+  //        "   +- [12] Panel (135.2,295.2,409.6,254.8)\n"
+  //        "   |  +- [20] ComboBox (176.16,371.64,327.68,25.48)\n"
+  //        "   |  |  +- Karate\n"
+  //        "   |  |  +- Judo\n"
+  //        "   |  |  +- Box\n"
+  //        "   |  |  +->Progtest<\n"
+  //        "   |  +- [21] ComboBox (176.16,422.6,327.68,25.48)\n"
+  //        "   |     +->PA2<\n"
+  //        "   |     +- OSY\n"
+  //        "   |     +- Both\n"
+  //        "   +- [12] Panel (135.2,295.2,409.6,254.8)\n"
+  //        "   |  +- [20] ComboBox (176.16,371.64,327.68,25.48)\n"
+  //        "   |  |  +- Karate\n"
+  //        "   |  |  +- Judo\n"
+  //        "   |  |  +- Box\n"
+  //        "   |  |  +->Progtest<\n"
+  //        "   |  +- [21] ComboBox (176.16,422.6,327.68,25.48)\n"
+  //        "   |  |  +->PA2<\n"
+  //        "   |  |  +- OSY\n"
+  //        "   |  |  +- Both\n"
+  //        "   |  +- [12] Panel (176.16,371.64,327.68,178.36)\n"
+  //        "   |     +- [20] ComboBox (208.928,425.148,262.144,17.836)\n"
+  //        "   |     |  +- Karate\n"
+  //        "   |     |  +- Judo\n"
+  //        "   |     |  +- Box\n"
+  //        "   |     |  +->Progtest<\n"
+  //        "   |     +- [21] ComboBox (208.928,460.82,262.144,17.836)\n"
+  //        "   |        +->PA2<\n"
+  //        "   |        +- OSY\n"
+  //        "   |        +- Both\n"
+  //        "   +- [12] Panel (135.2,295.2,409.6,254.8)\n"
+  //        "      +- [20] ComboBox (176.16,371.64,327.68,25.48)\n"
+  //        "      |  +- Karate\n"
+  //        "      |  +- Judo\n"
+  //        "      |  +- Box\n"
+  //        "      |  +->Progtest<\n"
+  //        "      +- [21] ComboBox (176.16,422.6,327.68,25.48)\n"
+  //        "      |  +->PA2<\n"
+  //        "      |  +- OSY\n"
+  //        "      |  +- Both\n"
+  //        "      +- [12] Panel (176.16,371.64,327.68,178.36)\n"
+  //        "      |  +- [20] ComboBox (208.928,425.148,262.144,17.836)\n"
+  //        "      |  |  +- Karate\n"
+  //        "      |  |  +- Judo\n"
+  //        "      |  |  +- Box\n"
+  //        "      |  |  +->Progtest<\n"
+  //        "      |  +- [21] ComboBox (208.928,460.82,262.144,17.836)\n"
+  //        "      |     +->PA2<\n"
+  //        "      |     +- OSY\n"
+  //        "      |     +- Both\n"
+  //        "      +- [12] Panel (176.16,371.64,327.68,178.36)\n"
+  //        "         +- [20] ComboBox (208.928,425.148,262.144,17.836)\n"
+  //        "         |  +- Karate\n"
+  //        "         |  +- Judo\n"
+  //        "         |  +- Box\n"
+  //        "         |  +->Progtest<\n"
+  //        "         +- [21] ComboBox (208.928,460.82,262.144,17.836)\n"
+  //        "         |  +->PA2<\n"
+  //        "         |  +- OSY\n"
+  //        "         |  +- Both\n"
+  //        "         +- [12] Panel (208.928,425.148,262.144,124.852)\n"
+  //        "            +- [20] ComboBox (235.142,462.604,209.715,12.4852)\n"
+  //        "            |  +- Karate\n"
+  //        "            |  +- Judo\n"
+  //        "            |  +- Box\n"
+  //        "            |  +->Progtest<\n"
+  //        "            +- [21] ComboBox (235.142,487.574,209.715,12.4852)\n"
+  //        "               +->PA2<\n"
+  //        "               +- OSY\n"
+  //        "               +- Both\n");
+  // assert(toString(a) ==
+  //        "[0] Window \"Sample window\" (10,10,600,480)\n"
+  //        "+- [1] Button \"Ok\" (70,394,180,48)\n"
+  //        "+- [2] Button \"Cancel\" (370,394,180,48)\n"
+  //        "+- [10] Label \"Username:\" (70,58,120,48)\n"
+  //        "+- [11] Input \"chucknorris\" (250,58,300,48)\n"
+  //        "+- [12] Panel (70,154,480,336)\n"
+  //        "   +- [20] ComboBox (118,254.8,384,33.6)\n"
+  //        "      +->Karate<\n"
+  //        "      +- Judo\n"
+  //        "      +- Box\n"
+  //        "      +- Progtest\n");
+  return EXIT_SUCCESS;
+}
+#endif /* __PROGTEST__ */
