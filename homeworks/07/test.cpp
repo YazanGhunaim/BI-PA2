@@ -46,17 +46,18 @@ public:
     }
   };
 
-  std::vector<m_data> m_matches;
-  std::set<std::string> m_contestants;
+  std::deque<m_data> m_matches;
+  std::unordered_set<std::string> m_contestants;
   mutable std::deque<std::string> m_result;
-  mutable std::map<std::string, std::vector<std::string>> m_graph;
+  mutable std::unordered_map<std::string, std::deque<std::string>> m_graph;
 
   // priv methods
   bool matchExists(const m_data &match) const
   {
+    m_data x{match.m_contestant2, match.m_contestant1, match.m_result};
     for (const auto &m : m_matches)
     {
-      if (!(m < match) && !(match < m))
+      if ((!(m < match) && !(match < m)) || (!(m < x) && !(x < m)))
       {
         return true;
       }
@@ -344,7 +345,7 @@ int main(void)
   try
   {
     y.addMatch("JavaScript", "PHP", true);
-    // assert("Exception missing!" == nullptr);
+    assert("Exception missing!" == nullptr);
   }
   catch (const logic_error &e)
   {
