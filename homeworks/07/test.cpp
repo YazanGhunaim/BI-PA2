@@ -45,8 +45,10 @@ public:
       return std::tie(m_contestant1, m_contestant2) < std::tie(rhs.m_contestant1, rhs.m_contestant2);
     }
   };
+
   std::vector<m_data> m_matches;
   std::set<std::string> m_contestants;
+  mutable std::deque<std::string> m_result;
   mutable std::map<std::string, std::vector<std::string>> m_graph;
 
   // priv methods
@@ -64,6 +66,8 @@ public:
 
   bool initializeGraph(const std::function<int(const M_ &)> &comparator) const
   {
+    m_graph.clear();
+    m_result.clear();
     for (const auto &m : m_matches)
     {
       int result = comparator(m.m_result);
@@ -91,26 +95,71 @@ public:
     return true;
   }
 
-  void printGraph() const
+  bool oneEndNode() const noexcept
   {
-    std::cout << "graph" << std::endl;
-    for (auto it = m_graph.begin(); it != m_graph.end(); it++)
+    size_t count = 0;
+    for (const auto &it : m_contestants)
     {
-      std::cout << it->first << ": ";
-      for (auto neighbor : it->second)
-      {
-        std::cout << neighbor << " ";
-      }
-      std::cout << std::endl;
+      if (m_graph.find(it) == m_graph.end())
+        count++;
     }
+    return count == 1;
+  }
+
+  bool topoSort() const noexcept
+  {
+    std::vector<int> inDegree(m_contestants.size(), 0);
+    for (const auto &[str, vec] : m_graph)
+    {
+      for (const auto &neighbor : vec)
+      {
+        inDegree[std::distance(m_contestants.begin(), m_contestants.find(neighbor))]++;
+      }
+    }
+
+    std::queue<std::string> q;
+    for (const auto &it : m_contestants)
+    {
+      if (inDegree[std::distance(m_contestants.begin(), m_contestants.find(it))] == 0)
+      {
+        q.push(it);
+      }
+    }
+
+    size_t cnt = 0;
+    while (!q.empty())
+    {
+      std::string u = q.front();
+      q.pop();
+      for (const auto &it : m_graph[u])
+      {
+        if (--inDegree[std::distance(m_contestants.begin(), m_contestants.find(it))] == 0)
+        {
+          q.push(it);
+        }
+      }
+      cnt++;
+      m_result.push_back(u);
+    }
+
+    return cnt == m_contestants.size();
+  }
+
+  bool onePath() const noexcept
+  {
+    for (size_t i = 1; i < m_result.size(); i++)
+    {
+      if (std::count(m_graph[m_result[i - 1]].begin(), m_graph[m_result[i - 1]].end(), m_result[i]) == 0)
+      {
+        return false;
+      }
+    }
+    return true;
   }
 
 public:
-  // default constructor
   CContest() {}
-  // destructor
   ~CContest() {}
-  // addMatch ( contestant1, contestant2, result )
   CContest &addMatch(const std::string &contestant1, const std::string &contestant2, const M_ &result)
   {
     m_data match(contestant1, contestant2, result);
@@ -123,24 +172,21 @@ public:
     m_matches.push_back(match);
     return *this;
   }
-
-  // isOrdered ( comparator )
   bool isOrdered(const std::function<int(const M_ &)> &comparator) const noexcept
   {
     if (initializeGraph(comparator))
     {
+      return oneEndNode() && topoSort() && onePath();
     }
     return false;
   }
-
-  // results (comparator)
   std::list<std::string> results(const std::function<int(const M_ &)> &comparator) const
   {
     if (!isOrdered(comparator))
     {
       throw std::logic_error("Cannot establish unambiguously");
     }
-    std::list<std::string> resultList{m_contestants.begin(), m_contestants.end()};
+    std::list<std::string> resultList{m_result.begin(), m_result.end()};
     return resultList;
   }
 };
@@ -189,124 +235,124 @@ int main(void)
       .addMatch("PHP", "Basic", CMatch(10, 0));
 
   assert(!x.isOrdered(HigherScore));
-  // try
-  // {
-  //   list<string> res = x.results(HigherScore);
-  //   assert("Exception missing!" == nullptr);
-  // }
-  // catch (const logic_error &e)
-  // {
-  // }
-  // catch (...)
-  // {
-  //   assert("Invalid exception thrown!" == nullptr);
-  // }
+  try
+  {
+    list<string> res = x.results(HigherScore);
+    assert("Exception missing!" == nullptr);
+  }
+  catch (const logic_error &e)
+  {
+  }
+  catch (...)
+  {
+    assert("Invalid exception thrown!" == nullptr);
+  }
 
-  // x.addMatch("PHP", "Pascal", CMatch(3, 6));
+  x.addMatch("PHP", "Pascal", CMatch(3, 6));
 
-  // assert(x.isOrdered(HigherScore));
-  // try
-  // {
-  //   list<string> res = x.results(HigherScore);
-  //   // assert((res == list<string>{"C++", "Java", "Pascal", "PHP", "Basic"}));
-  // }
-  // catch (...)
-  // {
-  //   assert("Unexpected exception!" == nullptr);
-  // }
+  assert(x.isOrdered(HigherScore));
+  try
+  {
+    list<string> res = x.results(HigherScore);
+    assert((res == list<string>{"C++", "Java", "Pascal", "PHP", "Basic"}));
+  }
+  catch (...)
+  {
+    assert("Unexpected exception!" == nullptr);
+  }
 
-  // assert(!x.isOrdered(HigherScoreThreshold(3)));
-  // try
-  // {
-  //   list<string> res = x.results(HigherScoreThreshold(3));
-  //   assert("Exception missing!" == nullptr);
-  // }
-  // catch (const logic_error &e)
-  // {
-  // }
-  // catch (...)
-  // {
-  //   assert("Invalid exception thrown!" == nullptr);
-  // }
+  assert(!x.isOrdered(HigherScoreThreshold(3)));
+  try
+  {
+    list<string> res = x.results(HigherScoreThreshold(3));
+    assert("Exception missing!" == nullptr);
+  }
+  catch (const logic_error &e)
+  {
+  }
+  catch (...)
+  {
+    assert("Invalid exception thrown!" == nullptr);
+  }
 
-  // x.isOrdered([](const CMatch &x)
-  //             { return (x.m_A < x.m_B) - (x.m_B < x.m_A); });
-  // assert(x.isOrdered([](const CMatch &x)
-  //  { return (x.m_A < x.m_B) - (x.m_B < x.m_A); }));
-  // try
-  // {
-  //   list<string> res = x.results([](const CMatch &x)
-  //                                { return (x.m_A < x.m_B) - (x.m_B < x.m_A); });
-  //   assert((res == list<string>{"Basic", "PHP", "Pascal", "Java", "C++"}));
-  // }
-  // catch (...)
-  // {
-  //   assert("Unexpected exception!" == nullptr);
-  // }
+  x.isOrdered([](const CMatch &x)
+              { return (x.m_A < x.m_B) - (x.m_B < x.m_A); });
+  assert(x.isOrdered([](const CMatch &x)
+                     { return (x.m_A < x.m_B) - (x.m_B < x.m_A); }));
+  try
+  {
+    list<string> res = x.results([](const CMatch &x)
+                                 { return (x.m_A < x.m_B) - (x.m_B < x.m_A); });
+    assert((res == list<string>{"Basic", "PHP", "Pascal", "Java", "C++"}));
+  }
+  catch (...)
+  {
+    assert("Unexpected exception!" == nullptr);
+  }
 
-  // CContest<bool> y;
+  CContest<bool> y;
 
-  // y.addMatch("Python", "PHP", true)
-  //     .addMatch("PHP", "Perl", true)
-  //     .addMatch("Perl", "Bash", true)
-  //     .addMatch("Bash", "JavaScript", true)
-  //     .addMatch("JavaScript", "VBScript", true);
+  y.addMatch("Python", "PHP", true)
+      .addMatch("PHP", "Perl", true)
+      .addMatch("Perl", "Bash", true)
+      .addMatch("Bash", "JavaScript", true)
+      .addMatch("JavaScript", "VBScript", true);
 
-  // assert(y.isOrdered([](bool v)
-  //                    { return v ? 10 : -10; }));
-  // try
-  // {
-  //   list<string> res = y.results([](bool v)
-  //                                { return v ? 10 : -10; });
-  //   assert((res == list<string>{"Python", "PHP", "Perl", "Bash", "JavaScript", "VBScript"}));
-  // }
-  // catch (...)
-  // {
-  //   assert("Unexpected exception!" == nullptr);
-  // }
+  assert(y.isOrdered([](bool v)
+                     { return v ? 10 : -10; }));
+  try
+  {
+    list<string> res = y.results([](bool v)
+                                 { return v ? 10 : -10; });
+    assert((res == list<string>{"Python", "PHP", "Perl", "Bash", "JavaScript", "VBScript"}));
+  }
+  catch (...)
+  {
+    assert("Unexpected exception!" == nullptr);
+  }
 
-  // y.addMatch("PHP", "JavaScript", false);
-  // assert(!y.isOrdered([](bool v)
-  //                     { return v ? 10 : -10; }));
-  // try
-  // {
-  //   list<string> res = y.results([](bool v)
-  //                                { return v ? 10 : -10; });
-  //   assert("Exception missing!" == nullptr);
-  // }
-  // catch (const logic_error &e)
-  // {
-  // }
-  // catch (...)
-  // {
-  //   assert("Invalid exception thrown!" == nullptr);
-  // }
+  y.addMatch("PHP", "JavaScript", false);
+  assert(!y.isOrdered([](bool v)
+                      { return v ? 10 : -10; }));
+  try
+  {
+    list<string> res = y.results([](bool v)
+                                 { return v ? 10 : -10; });
+    assert("Exception missing!" == nullptr);
+  }
+  catch (const logic_error &e)
+  {
+  }
+  catch (...)
+  {
+    assert("Invalid exception thrown!" == nullptr);
+  }
 
-  // try
-  // {
-  //   y.addMatch("PHP", "JavaScript", false);
-  //   assert("Exception missing!" == nullptr);
-  // }
-  // catch (const logic_error &e)
-  // {
-  // }
-  // catch (...)
-  // {
-  //   assert("Invalid exception thrown!" == nullptr);
-  // }
+  try
+  {
+    y.addMatch("PHP", "JavaScript", false);
+    assert("Exception missing!" == nullptr);
+  }
+  catch (const logic_error &e)
+  {
+  }
+  catch (...)
+  {
+    assert("Invalid exception thrown!" == nullptr);
+  }
 
-  // try
-  // {
-  //   y.addMatch("JavaScript", "PHP", true);
-  //   assert("Exception missing!" == nullptr);
-  // }
-  // catch (const logic_error &e)
-  // {
-  // }
-  // catch (...)
-  // {
-  //   assert("Invalid exception thrown!" == nullptr);
-  // }
+  try
+  {
+    y.addMatch("JavaScript", "PHP", true);
+    // assert("Exception missing!" == nullptr);
+  }
+  catch (const logic_error &e)
+  {
+  }
+  catch (...)
+  {
+    assert("Invalid exception thrown!" == nullptr);
+  }
   return EXIT_SUCCESS;
 }
 #endif /* __PROGTEST__ */
