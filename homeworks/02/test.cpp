@@ -27,7 +27,7 @@ private:
 public:
   // constructor
   Employee(string name, string surname, string email, unsigned salary) : m_name(move(name)), m_surname(move(surname)), m_email(move(email)), m_salary(salary) {}
-  ~Employee(void) {}
+  ~Employee() {}
   void change_name(const string &new_name, const string &new_surname)
   {
     m_name = new_name;
@@ -73,7 +73,7 @@ private:
 public:
   CPersonalAgenda(void) {}
 
-  ~CPersonalAgenda(void)
+  ~CPersonalAgenda()
   {
     for (auto ptr : db_sorted_by_names)
     {
