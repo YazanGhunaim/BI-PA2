@@ -162,6 +162,7 @@ bool CPersonalAgenda::binarySearchByEmail(const string &email) const
                             { return a->get_email() < b->get_email(); });
 }
 
+// checks if the email is unique
 bool CPersonalAgenda::unique_credentials(const string &email) const
 {
   if (db_sorted_by_emails.size() == 0)
@@ -171,6 +172,7 @@ bool CPersonalAgenda::unique_credentials(const string &email) const
   return !binarySearchByEmail(email);
 }
 
+// checks if the name and surname are unique
 bool CPersonalAgenda::unique_credentials(const string &name, const string &sur_name) const
 {
   if (db_sorted_by_names.size() == 0)
@@ -212,6 +214,8 @@ bool CPersonalAgenda::add(const string &name, const string &surname, const strin
   return true;
 }
 
+// retrieves first employee in the list. The name of the employee is filled into the output parameters outName/outSurname.
+// Return value is either true (success, there exists at least one employee in the list), or false (list is empty).
 bool CPersonalAgenda::getFirst(string &outName, string &outSurname) const
 {
   if (db_sorted_by_names.size() == 0)
@@ -223,6 +227,8 @@ bool CPersonalAgenda::getFirst(string &outName, string &outSurname) const
   return true;
 }
 
+// retrieves the next employee that follows employee name/surname in the list. The name of the successor is filled into the output parameters outName/outSurname.
+// Return value is either true (success, name/surname was found and there exists a successor), or false (employee name/surname not found, or name/surname is the last employee in the list).
 bool CPersonalAgenda::getNext(const string &name, const string &surname, string &outName, string &outSurname) const
 {
   int target_index = binarySearchNewName(name, surname);
