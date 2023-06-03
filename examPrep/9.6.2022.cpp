@@ -12,19 +12,51 @@ public:
     CTree &operator=(const CTree &src) = delete;
     ~CTree()
     {
-        // TODO
+        delete m_Root;
     }
     bool isSet(const string &key)
     {
-        // TODO
+        CNode *temp = m_Root;
+        while (temp)
+        {
+            if (key == temp->m_Key)
+                return true;
+            else if (key < temp->m_Key)
+                temp = temp->m_L;
+            else
+                temp = temp->m_R;
+        }
+        return false;
     }
     bool insert(const string &key, const string &val)
     {
-        // TODO
+        CNode **temp = &m_Root;
+
+        while (*temp)
+        {
+            if (key == (*temp)->m_Key)
+                return false;
+            else if (key < (*temp)->m_Key)
+                temp = &((*temp)->m_L);
+            else
+                temp = &((*temp)->m_R);
+        }
+
+        auto newNode = new CNode(key, val);
+        if (m_Last)
+            m_Last->m_NextOrder = newNode;
+        else
+            m_First = newNode;
+
+        m_Last = newNode;
+
+        *temp = newNode;
+        return true;
     }
     friend ostream &operator<<(ostream &os, const CTree &src)
     {
-        // TODO
+        src.print(os);
+        return os;
     }
 
 protected:
@@ -33,13 +65,43 @@ protected:
     public:
         CNode(const string &key, const string &val)
             : m_Key(key), m_Val(val) {}
-        string m_Key, m_Val;
+        ~CNode()
+        {
+            delete m_R;
+            delete m_L;
+        }
+        friend std::ostream &operator<<(std::ostream &os, const CNode &src)
+        {
+            return os << src.m_Key << " => " << src.m_Val;
+        }
+        string m_Key,
+            m_Val;
         CNode *m_L = nullptr, *m_R = nullptr;
         CNode *m_NextOrder = nullptr;
     };
     CNode *m_Root = nullptr;
     CNode *m_First = nullptr, *m_Last = nullptr;
     friend int main();
+
+private:
+    void print(std::ostream &os) const
+    {
+        os << "{";
+        CNode *temp = m_Root;
+        bool first = true;
+        while (temp)
+        {
+            if (!first)
+                os << ", ";
+            else
+                first = false;
+
+            os << *temp;
+
+            temp = temp->m_NextOrder;
+        }
+        os << "}";
+    }
 };
 
 int main(void)
