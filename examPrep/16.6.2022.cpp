@@ -205,6 +205,16 @@ public:
         assert(t0.erase("AG1") == true);
         assert(t0.m_First == t0.m_Last);
         assert(t0.isSet("AG1") == false);
+
+        CTester t1;
+        assert(t1.insert("kkk"));
+        assert(t1.insert("aaa"));
+        assert(t1.insert("ppp"));
+        assert(t1.insert("mmm"));
+        assert(t1.insert("nnn"));
+        assert(t1.insert("lll"));
+        assert(t1.erase("kkk"));
+        assert(t1.m_First->m_Key == "aaa");
     }
 };
 
