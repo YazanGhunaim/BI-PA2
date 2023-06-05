@@ -19,7 +19,7 @@ public:
         CNode *temp = m_Root;
         while (temp)
         {
-            if (key == temp->m_Key)
+            if (temp->m_Key == key)
                 return true;
             else if (key < temp->m_Key)
                 temp = temp->m_L;
@@ -31,7 +31,6 @@ public:
     bool insert(const string &key, const string &val)
     {
         CNode **temp = &m_Root;
-
         while (*temp)
         {
             if (key == (*temp)->m_Key)
@@ -42,48 +41,17 @@ public:
                 temp = &((*temp)->m_R);
         }
 
-        auto newNode = new CNode(key, val);
-        if (m_Last)
-            m_Last->m_NextOrder = newNode;
+        auto new_node = new CNode{key, val};
+
+        if (!m_Last)
+            m_First = new_node;
         else
-            m_First = newNode;
+            m_Last->m_NextOrder = new_node;
 
-        m_Last = newNode;
-
-        *temp = newNode;
+        m_Last = new_node;
+        *temp = new_node;
         return true;
     }
-    friend ostream &operator<<(ostream &os, const CTree &src)
-    {
-        src.print(os);
-        return os;
-    }
-
-protected:
-    class CNode
-    {
-    public:
-        CNode(const string &key, const string &val)
-            : m_Key(key), m_Val(val) {}
-        ~CNode()
-        {
-            delete m_R;
-            delete m_L;
-        }
-        friend std::ostream &operator<<(std::ostream &os, const CNode &src)
-        {
-            return os << src.m_Key << " => " << src.m_Val;
-        }
-        string m_Key,
-            m_Val;
-        CNode *m_L = nullptr, *m_R = nullptr;
-        CNode *m_NextOrder = nullptr;
-    };
-    CNode *m_Root = nullptr;
-    CNode *m_First = nullptr, *m_Last = nullptr;
-    friend int main();
-
-private:
     void print(std::ostream &os) const
     {
         os << "{";
@@ -97,11 +65,39 @@ private:
                 first = false;
 
             os << *temp;
-
             temp = temp->m_NextOrder;
         }
         os << "}";
     }
+    friend ostream &operator<<(ostream &os, const CTree &src)
+    {
+        src.print(os);
+        return os;
+    }
+
+protected:
+    class CNode
+    {
+    public:
+        CNode(const string &key, const string &val)
+            : m_Key(key), m_Val(val) {}
+
+        ~CNode()
+        {
+            delete m_L;
+            delete m_R;
+        }
+        friend std::ostream &operator<<(std::ostream &os, const CNode &src)
+        {
+            return os << src.m_Key << " => " << src.m_Val;
+        }
+        string m_Key, m_Val;
+        CNode *m_L = nullptr, *m_R = nullptr;
+        CNode *m_NextOrder = nullptr;
+    };
+    CNode *m_Root = nullptr;
+    CNode *m_First = nullptr, *m_Last = nullptr;
+    friend int main();
 };
 
 int main(void)
