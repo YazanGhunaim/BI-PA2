@@ -30,8 +30,7 @@ public:
     Array(const Array<T> &src)
     {
         m_data = new T[m_size = src.size()];
-        for (size_t i = 0; i < m_size; ++i)
-            m_data[i] = src.m_data[i];
+        std::copy(src.m_data, src.m_data + src.m_size, m_data);
     }
     ~Array()
     {
@@ -56,8 +55,7 @@ public:
             return *this;
         delete[] m_data;
         m_data = new T[m_size = src.m_size];
-        for (size_t i = 0; i < m_size; ++i)
-            m_data[i] = src.m_data[i];
+        std::copy(src.m_data, src.m_data + m_size, m_data);
         return *this;
     }
 };
