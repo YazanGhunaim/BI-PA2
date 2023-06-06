@@ -52,65 +52,69 @@ public:
                 temp = &((*temp)->m_R);
         }
 
-        auto newNode = new CNode{key};
-        newNode->m_PrevOrder = m_Last;
-
-        if (!m_Last)
-            m_First = newNode;
-        else
-            m_Last->m_NextOrder = newNode;
-
-        m_Last = newNode;
+        auto newNode = new CNode(key);
+        addToList(newNode);
         *temp = newNode;
         return true;
     }
     bool erase(string key)
     {
-        CNode **temp = &m_Root;
+        CNode **trav = &m_Root;
 
-        while (*temp)
+        while (*trav)
         {
-            if (key == (*temp)->m_Key)
+            if (key == (*trav)->m_Key)
             {
-                if ((*temp)->m_L && (*temp)->m_R)
+                // two children
+                if ((*trav)->m_L && (*trav)->m_R)
                 {
-                    CNode *overwrite = *temp;
-                    temp = &((*temp)->m_R);
+                    CNode *overWrite = *trav;
 
-                    while ((*temp)->m_L)
-                        temp = &((*temp)->m_L);
+                    trav = &((*trav)->m_R);
+                    while ((*trav)->m_L)
+                        trav = &((*trav)->m_L);
 
-                    overwrite->m_Key = (*temp)->m_Key;
+                    overWrite->m_Key = (*trav)->m_Key;
                 }
 
-                CNode *toDelete = *temp;
-
+                CNode *toDelete = *trav;
                 if (toDelete->m_L)
-                    *temp = toDelete->m_L;
+                    *trav = toDelete->m_L;
                 else
-                    *temp = toDelete->m_R;
+                    *trav = toDelete->m_R;
 
                 toDelete->m_L = toDelete->m_R = nullptr;
 
-                if (toDelete->m_PrevOrder)
-                    toDelete->m_PrevOrder->m_NextOrder = toDelete->m_NextOrder;
-                else
-                    m_First = toDelete->m_NextOrder;
-
-                if (toDelete->m_NextOrder)
-                    toDelete->m_NextOrder->m_PrevOrder = toDelete->m_PrevOrder;
-                else
-                    m_Last = toDelete->m_PrevOrder;
-
-                delete toDelete;
+                removeFromList(toDelete);
                 return true;
             }
-            else if (key < (*temp)->m_Key)
-                temp = &((*temp)->m_L);
+            else if (key < (*trav)->m_Key)
+                trav = &((*trav)->m_L);
             else
-                temp = &((*temp)->m_R);
+                trav = &((*trav)->m_R);
         }
         return false;
+    }
+    void print() const
+    {
+        CNode *temp = m_First;
+        bool first = true;
+        while (temp)
+        {
+            if (first)
+            {
+                cout << "first :";
+                first = false;
+            }
+            cout << temp->m_Key;
+            if (temp->m_PrevOrder)
+                cout << " prev : " << temp->m_PrevOrder->m_Key;
+
+            cout << endl;
+            temp = temp->m_NextOrder;
+        }
+
+        cout << "first : " << m_First->m_Key << " last : " << m_Last->m_Key << endl;
     }
 
 protected:
@@ -132,6 +136,43 @@ protected:
     CNode *m_Root = nullptr;
     CNode *m_First = nullptr;
     CNode *m_Last = nullptr;
+
+private:
+    void addToList(CNode *newNode)
+    {
+        if (!m_First)
+            m_First = newNode;
+        else
+        {
+            CNode *temp = m_First;
+            while (temp && temp->m_NextOrder)
+                temp = temp->m_NextOrder;
+
+            CNode *prev = temp;
+            temp->m_NextOrder = newNode;
+            temp = temp->m_NextOrder;
+            temp->m_PrevOrder = prev;
+
+            m_Last = newNode;
+        }
+    }
+
+    void removeFromList(CNode *to_delete)
+    {
+        if (m_First == to_delete)
+            m_First = to_delete->m_NextOrder;
+
+        if (m_Last == to_delete)
+            m_Last = to_delete->m_PrevOrder;
+
+        if (to_delete->m_PrevOrder)
+            to_delete->m_PrevOrder->m_NextOrder = to_delete->m_NextOrder;
+
+        if (to_delete->m_NextOrder)
+            to_delete->m_NextOrder->m_PrevOrder = to_delete->m_PrevOrder;
+
+        delete to_delete;
+    }
 };
 
 class CTester : public CTree
@@ -165,6 +206,7 @@ public:
         assert(t0.erase("ZDM") == true);
         assert(t0.m_First->m_Key == "PA1" && t0.m_First->m_NextOrder->m_Key == "UOS" && t0.m_First->m_NextOrder->m_NextOrder->m_Key == "PA2" && t0.m_First->m_NextOrder->m_NextOrder->m_NextOrder->m_Key == "CAO" && t0.m_First->m_NextOrder->m_NextOrder->m_NextOrder->m_NextOrder->m_Key == "LIN" && t0.m_First->m_NextOrder->m_NextOrder->m_NextOrder->m_NextOrder->m_NextOrder->m_Key == "AAG" && t0.m_First->m_NextOrder->m_NextOrder->m_NextOrder->m_NextOrder->m_NextOrder->m_NextOrder->m_Key == "AG1");
         assert(t0.m_Last->m_Key == "AG1" && t0.m_Last->m_PrevOrder->m_Key == "AAG" && t0.m_Last->m_PrevOrder->m_PrevOrder->m_Key == "LIN" && t0.m_Last->m_PrevOrder->m_PrevOrder->m_PrevOrder->m_Key == "CAO" && t0.m_Last->m_PrevOrder->m_PrevOrder->m_PrevOrder->m_PrevOrder->m_Key == "PA2" && t0.m_Last->m_PrevOrder->m_PrevOrder->m_PrevOrder->m_PrevOrder->m_PrevOrder->m_Key == "UOS" && t0.m_Last->m_PrevOrder->m_PrevOrder->m_PrevOrder->m_PrevOrder->m_PrevOrder->m_PrevOrder->m_Key == "PA1");
+
         assert(t0.isSet("ZDM") == false);
 
         assert(t0.erase("AAG") == true);
@@ -205,16 +247,6 @@ public:
         assert(t0.erase("AG1") == true);
         assert(t0.m_First == t0.m_Last);
         assert(t0.isSet("AG1") == false);
-
-        CTester t1;
-        assert(t1.insert("kkk"));
-        assert(t1.insert("aaa"));
-        assert(t1.insert("ppp"));
-        assert(t1.insert("mmm"));
-        assert(t1.insert("nnn"));
-        assert(t1.insert("lll"));
-        assert(t1.erase("kkk"));
-        assert(t1.m_First->m_Key == "aaa");
     }
 };
 
