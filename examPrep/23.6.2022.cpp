@@ -43,10 +43,10 @@ CNetwork::CNetwork(size_t size) : m_Size(size)
 
 CNetwork::~CNetwork()
 {
-    for (size_t i = 0; i < m_Size; i++)
+    for (size_t i = 0; i < m_Size; ++i)
     {
         CPerson *head = m_Table[i];
-        while (head != nullptr)
+        while (head)
         {
             CPerson *tmp = head->m_Next;
             delete head;
@@ -56,23 +56,24 @@ CNetwork::~CNetwork()
     delete[] m_Table;
 }
 
-CNetwork::CNetwork(const CNetwork &other) : m_Size(other.m_Size)
+CNetwork::CNetwork(const CNetwork &other)
+    : m_Size(other.m_Size)
 {
     m_Table = new CPerson *[m_Size];
-    for (size_t i = 0; i < m_Size; i++)
+    for (size_t i = 0; i < m_Size; ++i)
     {
         m_Table[i] = nullptr;
         CPerson *head = other.m_Table[i];
-        while (head != nullptr)
+        while (head)
         {
             CPerson *p = new CPerson(head->m_Name);
             p->m_Next = nullptr;
             CPerson *back = m_Table[i];
-            if (back == nullptr)
+            if (!back)
                 m_Table[i] = p;
             else
             {
-                while (back->m_Next != nullptr)
+                while (back->m_Next)
                     back = back->m_Next;
                 back->m_Next = p;
             }
@@ -80,10 +81,10 @@ CNetwork::CNetwork(const CNetwork &other) : m_Size(other.m_Size)
         }
     }
 
-    for (size_t i = 0; i < m_Size; i++)
+    for (size_t i = 0; i < m_Size; ++i)
     {
         CPerson *head = other.m_Table[i];
-        while (head != nullptr)
+        while (head)
         {
             CPerson *p = Find(head->m_Name);
             for (CPerson *it : head->m_Friends)
