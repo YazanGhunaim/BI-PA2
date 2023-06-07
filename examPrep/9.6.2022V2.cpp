@@ -16,59 +16,98 @@ using namespace std;
 
 class CPkg
 {
+private:
+    // package name and set of dependencies
+    std::string m_Name;
+    std::set<std::string> m_Dependencies;
+
 public:
     CPkg() = default;
-    CPkg(const std::string &pkgName) : m_PkgName(std::move(pkgName)) {}
-    CPkg &addDep(const std::string &dep)
+    ~CPkg() = default;
+
+    CPkg(const std::string &pkgName)
+        : m_Name(pkgName) {}
+
+    CPkg &addDep(const std::string &dep) // fluent interface
     {
-        m_dps.emplace(std::move(dep));
+        m_Dependencies.emplace(std::move(dep));
         return *this;
     }
-    std::string toString() const
+
+    pair<set<string>::const_iterator, set<string>::const_iterator> getDep() const
     {
-        return m_PkgName;
+        return {m_Dependencies.begin(), m_Dependencies.end()};
     }
-    std::pair<std::unordered_set<std::string>::const_iterator, std::unordered_set<std::string>::const_iterator> findRange() const
+
+    string toString() const
     {
-        return {m_dps.begin(), m_dps.end()};
+        return m_Name;
     }
+
     bool operator<(const CPkg &rhs) const
     {
-        return m_PkgName < rhs.m_PkgName;
+        return m_Name < rhs.m_Name;
     }
-
-private:
-    std::string m_PkgName;
-    std::unordered_set<std::string> m_dps;
 };
-
 class CPkgSys
 {
+private:
+    // package and available or not
+    map<CPkg, bool> m_System;
+
+    static void installDep(set<string> &result, const string &pkgName, map<CPkg, bool> &tmpSystem)
+    {
+        queue<string> queue({pkgName});
+
+        while (!queue.empty())
+        {
+            string currPkg{std::move(queue.front())};
+            queue.pop();
+
+            auto it = tmpSystem.find(currPkg);
+
+            if (it == tmpSystem.end()) // non registered package
+                throw std::invalid_argument("Package not found.");
+            else if (it->second) // package already installed / visited
+                continue;
+
+            auto [lo, hi] = it->first.getDep();
+            for (auto it = lo; it != hi; ++it)
+            {
+                queue.emplace(std::move(*it));
+            }
+
+            it->second = true;
+            result.emplace(it->first.toString());
+        }
+    }
+
 public:
+    CPkgSys() = default;
+    ~CPkgSys() = default;
+
     CPkgSys &addPkg(const CPkg &pkg)
     {
-        m_packages.emplace(std::move(pkg), false);
+        m_System.emplace(std::move(pkg), false);
         return *this;
     }
 
-    std::set<std::string> install(const std::list<std::string> &pkgList)
+    set<string> install(const std::list<string> &packages)
     {
-        std::set<std::string> result;
-        std::map<CPkg, bool> tmpPkgMap = m_packages;
+        map<CPkg, bool> tmpSystem = m_System;
+        set<string> result;
 
-        for (const auto &pkg : pkgList)
-        {
-            installPkg(pkg, tmpPkgMap, result);
-        }
+        for (const auto &pkg : packages)
+            installDep(result, pkg, tmpSystem);
 
-        swap(tmpPkgMap, m_packages);
+        swap(tmpSystem, m_System);
         return result;
     }
 
     friend std::ostream &operator<<(std::ostream &os, const CPkgSys &src)
     {
         bool first = true;
-        for (const auto &[pkg, installed] : src.m_packages)
+        for (const auto &[name, installed] : src.m_System)
         {
             if (installed)
             {
@@ -76,36 +115,11 @@ public:
                     os << ", ";
                 else
                     first = false;
-                os << pkg.toString();
+
+                os << name.toString();
             }
         }
         return os;
-    }
-
-private:
-    std::map<CPkg, bool> m_packages;
-
-    static void installPkg(const std::string &pkgName, std::map<CPkg, bool> &tmpPkgMap, std::set<std::string> &result)
-    {
-        std::queue<std::string> q({pkgName});
-        while (!q.empty())
-        {
-            std::string current{std::move(q.front())};
-            q.pop();
-
-            auto it = tmpPkgMap.find(current);
-            if (it == tmpPkgMap.end())
-                throw std::invalid_argument("Package not found.");
-            else if (it->second)
-                continue;
-
-            auto [lo, hi] = it->first.findRange();
-            for (auto it = lo; it != hi; ++it)
-                q.emplace(std::move(*it));
-
-            it->second = true;
-            result.emplace(it->first.toString());
-        }
     }
 };
 

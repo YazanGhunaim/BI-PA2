@@ -14,74 +14,81 @@ template <typename T>
 class Array
 {
 private:
-    T *m_data;
-    size_t m_size;
+    T *m_Data;
+    size_t m_Size;
 
 public:
-    explicit Array(size_t size)
+    Array()
+        : m_Data(nullptr), m_Size(0)
     {
-        m_size = size;
-        m_data = new T[size];
     }
 
-    Array()
-        : m_data(nullptr), m_size(0) {}
+    explicit Array(size_t size)
+    {
+        m_Size = size;
+        m_Data = new T[m_Size];
+    }
 
     Array(const Array<T> &src)
     {
-        m_data = new T[m_size = src.size()];
-        std::copy(src.m_data, src.m_data + src.m_size, m_data);
+        m_Size = src.m_Size;
+        m_Data = new T[m_Size];
+        copy(src.m_Data, src.m_Data + src.m_Size, m_Data);
     }
     ~Array()
     {
-        delete[] m_data;
+        delete[] m_Data;
     }
 
     size_t size() const
     {
-        return m_size;
+        return m_Size;
     }
 
     T &operator[](int idx)
     {
-        if (idx >= (int)m_size)
+        if (idx >= (int)m_Size)
             throw std::out_of_range("");
-        return m_data[idx];
+        return m_Data[idx];
     }
 
     Array<T> &operator=(const Array<T> &src)
     {
         if (&src == this)
             return *this;
-        delete[] m_data;
-        m_data = new T[m_size = src.m_size];
-        std::copy(src.m_data, src.m_data + m_size, m_data);
+
+        delete[] m_Data;
+        m_Size = src.m_Size;
+        m_Data = new T[m_Size];
+        copy(src.m_Data, src.m_Data + src.m_Size, m_Data);
         return *this;
     }
 };
 
-template <typename T_>
+template <typename T>
 class CMatrix3
 {
 private:
-    Array<Array<Array<T_>>> m_Data3D;
+    Array<Array<Array<T>>> mData3D;
 
 public:
+    // constructor ( unsigned n1, unsigned n2, unsigned n3 )
     CMatrix3(unsigned n1, unsigned n2, unsigned n3)
-        : m_Data3D(n1)
+        : mData3D(n1)
     {
         for (size_t i = 0; i < n1; ++i)
         {
-            m_Data3D[i] = Array<Array<T_>>(n2);
+            mData3D[i] = Array<Array<T>>(n2);
             for (size_t j = 0; j < n2; ++j)
-                m_Data3D[i][j] = Array<T_>(n3);
+                mData3D[i][j] = Array<T>(n3);
         }
     }
+
     ~CMatrix3() = default;
 
-    Array<Array<T_>> &operator[](unsigned id)
+    Array<Array<T>> &operator[](unsigned id)
     {
-        return m_Data3D[id];
+        return mData3D[id];
     }
 };
 

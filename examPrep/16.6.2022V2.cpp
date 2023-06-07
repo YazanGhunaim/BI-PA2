@@ -16,58 +16,56 @@ using namespace std;
 
 class CDelivery
 {
-private:
-    std::multimap<std::string, std::string> m_map;
-
-    [[nodiscard]] std::list<std::string> bfs(const std::string &customer, const std::set<std::string> &depots) const
-    {
-        std::queue<std::string> queue({customer});
-        std::unordered_map<std::string, std::string> path;
-
-        while (!queue.empty())
-        {
-            std::string stop = std::move(queue.front());
-            queue.pop();
-
-            auto stop_it = depots.find(stop);
-            if (stop_it != depots.end())
-            {
-                std::list<std::string> res({stop});
-                while (res.back() != customer)
-                {
-                    res.emplace_back(path.at(res.back()));
-                }
-                return res;
-            }
-
-            auto [lo, hi] = m_map.equal_range(stop);
-            for (auto it = lo; it != hi; ++it)
-            {
-                if (path.emplace(it->second, stop).second)
-                    queue.emplace(it->second);
-            }
-        }
-
-        return {};
-    }
-
 public:
     CDelivery() = default;
-
     ~CDelivery() = default;
 
+    // add connection from -> to, fluent interface
     CDelivery &addConn(const string &from, const string &to)
     {
-        m_map.emplace(to, from);
+        m_connections.emplace(std::move(to), std::move(from));
         return *this;
     }
 
     map<string, list<string>> serveCustomers(const set<string> &customers, const set<string> &depots) const
     {
-        std::map<std::string, std::list<std::string>> result;
+        map<string, list<string>> result;
+
         for (const auto &customer : customers)
             result.emplace(customer, bfs(customer, depots));
+
         return result;
+    }
+
+private:
+    multimap<string, string> m_connections;
+    list<string> bfs(const string &customer, const set<string> &depots) const
+    {
+        queue<string> queue({customer});
+        map<string, string> arrivalsNav;
+
+        while (!queue.empty())
+        {
+            string stop({std::move(queue.front())});
+            queue.pop();
+
+            auto it = depots.find(stop);
+            if (it != depots.end())
+            {
+                list<string> result{stop};
+                while (result.back() != customer)
+                {
+                    result.push_back(arrivalsNav.at(std::move(result.back())));
+                }
+                return result;
+            }
+
+            auto [lo, hi] = m_connections.equal_range(stop);
+            for (auto it = lo; it != hi; ++it)
+                if (arrivalsNav.emplace(it->second, stop).second)
+                    queue.emplace(it->second);
+        }
+        return {};
     }
 };
 
