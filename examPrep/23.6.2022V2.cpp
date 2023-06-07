@@ -18,59 +18,59 @@ class CDelivery
 {
 public:
     CDelivery() = default;
-    ~CDelivery() {}
+    ~CDelivery() = default;
     CDelivery &addConn(const string &a, const string &b);
     vector<int> findCoverage(const set<string> &depots) const;
 
 private:
-    std::map<std::string, std::set<std::string>> m_map;
+    map<string, set<string>> m_connections;
 };
 
 CDelivery &CDelivery::addConn(const string &a, const string &b)
 {
-    m_map[a].insert(b);
-    m_map[b].insert(a);
+    m_connections[a].insert(b);
+    m_connections[b].insert(a);
     return *this;
 }
 
 vector<int> CDelivery::findCoverage(const set<string> &depots) const
 {
-    std::vector<int> result;
-    std::queue<std::string> q;
-    std::set<std::string> visited;
-    int prev = depots.size();
-    int next = 0;
+    vector<int> result;
+    queue<string> queue;
+    set<string> visited;
 
-    for (const auto &i : depots)
+    int now = depots.size();
+    int next = 0;
+    for (const auto &dep : depots)
     {
-        if (m_map.find(i) == m_map.end())
+        if (m_connections.find(dep) == m_connections.end())
             throw invalid_argument("");
-        q.emplace(std::move(i));
-        visited.emplace(std::move(i));
+        queue.emplace(std::move(dep));
+        visited.emplace(std::move(dep));
     }
 
-    while (!q.empty())
+    while (!queue.empty())
     {
         if (next == 0)
         {
-            if (result.empty())
-                result.push_back(prev);
+            if (result.size() == 0)
+                result.push_back(now);
             else
-                result.push_back(prev + result.back());
-            next = prev;
-            prev = 0;
+                result.push_back(result.back() + now);
+            next = now;
+            now = 0;
         }
 
-        for (const auto &i : m_map.at(q.front()))
+        for (const auto &connection : m_connections.at(queue.front()))
         {
-            if (visited.count(i) != 0)
+            if (visited.count(connection) != 0)
                 continue;
-            visited.emplace(std::move(i));
-            q.emplace(std::move(i));
-            prev++;
+            queue.emplace(std::move(connection));
+            visited.emplace(std::move(connection));
+            ++now;
         }
-        next--;
-        q.pop();
+        queue.pop();
+        --next;
     }
     return result;
 }
