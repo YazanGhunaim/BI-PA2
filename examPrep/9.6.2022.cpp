@@ -6,24 +6,6 @@ using namespace std;
 
 class CTree
 {
-private:
-    void print(std::ostream &os) const
-    {
-        os << "{";
-        CNode *temp = m_Root;
-        bool first = true;
-        while (temp)
-        {
-            if (!first)
-                os << ", ";
-            else
-                first = false;
-            os << *temp;
-            temp = temp->m_NextOrder;
-        }
-        os << "}";
-    }
-
 public:
     CTree() = default;
     CTree(const CTree &src) = delete;
@@ -39,7 +21,7 @@ public:
         {
             if (temp->m_Key == key)
                 return true;
-            if (key < temp->m_Key)
+            else if (key < temp->m_Key)
                 temp = temp->m_L;
             else
                 temp = temp->m_R;
@@ -53,25 +35,38 @@ public:
         {
             if ((*temp)->m_Key == key)
                 return false;
-            if (key < (*temp)->m_Key)
+            else if (key < (*temp)->m_Key)
                 temp = &((*temp)->m_L);
             else
                 temp = &((*temp)->m_R);
         }
 
         auto newNode = new CNode(key, val);
-
         if (m_Last)
             m_Last->m_NextOrder = newNode;
         else
             m_First = newNode;
         m_Last = newNode;
+
         *temp = newNode;
         return true;
     }
     friend ostream &operator<<(ostream &os, const CTree &src)
     {
-        src.print(os);
+        os << "{";
+        CNode *temp = src.m_First;
+        bool first = true;
+        while (temp)
+        {
+            if (!first)
+                os << ", ";
+            else
+                first = false;
+            os << *temp;
+            temp = temp->m_NextOrder;
+        }
+        os << "}";
+
         return os;
     }
 
@@ -87,7 +82,7 @@ protected:
             delete m_R;
         }
 
-        friend std::ostream &operator<<(std::ostream &os, const CNode &src)
+        friend ostream &operator<<(ostream &os, const CNode &src)
         {
             return os << src.m_Key << " => " << src.m_Val;
         }
