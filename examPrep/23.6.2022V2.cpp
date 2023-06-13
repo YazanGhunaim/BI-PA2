@@ -19,61 +19,71 @@ class CDelivery
 public:
     CDelivery() = default;
     ~CDelivery() = default;
-    CDelivery &addConn(const string &a, const string &b);
-    vector<int> findCoverage(const set<string> &depots) const;
+    CDelivery &addConn(const string &a, const string &b)
+    {
+        m_Connections[a].insert(b);
+        m_Connections[b].insert(a);
+        return *this;
+    }
+
+    vector<int> findCoverage(const set<string> &depots) const
+    {
+        vector<int> result;
+        set<string> visited;
+        queue<string> queue;
+
+        int start = 0;
+        int next = depots.size();
+
+        for (const auto &i : depots)
+        {
+            if (m_Connections.find(i) == m_Connections.end())
+                throw invalid_argument("");
+            queue.push(i);
+            visited.insert(i);
+        }
+
+        while (!queue.empty())
+        {
+            if (start == 0)
+            {
+                if (result.empty())
+                    result.push_back(next);
+                else
+                    result.push_back(next + result.back());
+                start = next;
+                next = 0;
+            }
+
+            for (const auto &x : m_Connections.at(queue.front()))
+            {
+                if (visited.count(x) != 0)
+                    continue;
+                queue.push(x);
+                visited.insert(x);
+                ++next;
+            }
+            --start;
+            queue.pop();
+        }
+        return result;
+    }
 
 private:
-    map<string, set<string>> m_connections;
+    map<string, set<string>> m_Connections;
+
+    friend ostream &operator<<(ostream &os, const CDelivery &src)
+    {
+        for (const auto &[stop, cnxns] : src.m_Connections)
+        {
+            os << stop << " => ";
+            for (const auto &x : cnxns)
+                os << x << " ";
+            os << endl;
+        }
+        return os;
+    }
 };
-
-CDelivery &CDelivery::addConn(const string &a, const string &b)
-{
-    m_connections[a].insert(b);
-    m_connections[b].insert(a);
-    return *this;
-}
-
-vector<int> CDelivery::findCoverage(const set<string> &depots) const
-{
-    vector<int> result;
-    queue<string> queue;
-    set<string> visited;
-
-    int now = depots.size();
-    int next = 0;
-    for (const auto &dep : depots)
-    {
-        if (m_connections.find(dep) == m_connections.end())
-            throw invalid_argument("");
-        queue.emplace(std::move(dep));
-        visited.emplace(std::move(dep));
-    }
-
-    while (!queue.empty())
-    {
-        if (next == 0)
-        {
-            if (result.size() == 0)
-                result.push_back(now);
-            else
-                result.push_back(result.back() + now);
-            next = now;
-            now = 0;
-        }
-
-        for (const auto &connection : m_connections.at(queue.front()))
-        {
-            if (visited.count(connection) != 0)
-                continue;
-            queue.emplace(std::move(connection));
-            visited.emplace(std::move(connection));
-            ++now;
-        }
-        queue.pop();
-        --next;
-    }
-    return result;
-}
 
 int main()
 {

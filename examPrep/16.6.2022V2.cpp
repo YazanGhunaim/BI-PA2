@@ -23,7 +23,7 @@ public:
     // add connection from -> to, fluent interface
     CDelivery &addConn(const string &from, const string &to)
     {
-        m_connections.emplace(std::move(to), std::move(from));
+        m_Connections.emplace(to, from);
         return *this;
     }
 
@@ -31,41 +31,53 @@ public:
     {
         map<string, list<string>> result;
 
-        for (const auto &customer : customers)
-            result.emplace(customer, bfs(customer, depots));
-
+        for (const auto &cust : customers)
+            result.emplace(cust, pathBFS(cust, depots));
         return result;
     }
 
 private:
-    multimap<string, string> m_connections;
-    list<string> bfs(const string &customer, const set<string> &depots) const
+    multimap<string, string> m_Connections;
+
+    list<string> pathBFS(const string &customer, const set<string> &depots) const
     {
         queue<string> queue({customer});
-        map<string, string> arrivalsNav;
+        unordered_map<string, string> arrivalHistory;
 
         while (!queue.empty())
         {
-            string stop({std::move(queue.front())});
+            string current = queue.front();
             queue.pop();
 
-            auto it = depots.find(stop);
+            auto it = depots.find(current);
+
             if (it != depots.end())
             {
-                list<string> result{stop};
+                list<string> result({current});
+
                 while (result.back() != customer)
-                {
-                    result.push_back(arrivalsNav.at(std::move(result.back())));
-                }
+                    result.emplace_back(arrivalHistory.at(result.back()));
+
                 return result;
             }
-
-            auto [lo, hi] = m_connections.equal_range(stop);
+            auto [lo, hi] = m_Connections.equal_range(current);
             for (auto it = lo; it != hi; ++it)
-                if (arrivalsNav.emplace(it->second, stop).second)
+                if (arrivalHistory.emplace(it->second, current).second)
                     queue.emplace(it->second);
         }
         return {};
+    }
+
+    friend ostream &operator<<(ostream &os, const CDelivery &src)
+    {
+        for (const auto &[to, from] : src.m_Connections)
+        {
+            auto it = src.m_Connections.equal_range(to);
+            os << "to: " << to << endl;
+            for (auto itr = it.first; itr != it.second; ++itr)
+                os << itr->second << endl;
+        }
+        return os;
     }
 };
 
