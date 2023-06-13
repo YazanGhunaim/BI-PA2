@@ -25,42 +25,35 @@ public:
 
     explicit Array(size_t size)
     {
-        m_Size = size;
-        m_Data = new T[m_Size];
+        m_Data = new T[m_Size = size];
     }
 
     Array(const Array<T> &src)
     {
-        m_Size = src.m_Size;
-        m_Data = new T[m_Size];
+        m_Data = new T[m_Size = src.m_Size];
         copy(src.m_Data, src.m_Data + src.m_Size, m_Data);
     }
+
     ~Array()
     {
         delete[] m_Data;
     }
 
-    size_t size() const
+    T &operator[](size_t index)
     {
-        return m_Size;
-    }
-
-    T &operator[](int idx)
-    {
-        if (idx >= (int)m_Size)
+        if (index >= m_Size)
             throw std::out_of_range("");
-        return m_Data[idx];
+        return m_Data[index];
     }
 
     Array<T> &operator=(const Array<T> &src)
     {
-        if (&src == this)
-            return *this;
-
-        delete[] m_Data;
-        m_Size = src.m_Size;
-        m_Data = new T[m_Size];
-        copy(src.m_Data, src.m_Data + src.m_Size, m_Data);
+        if (&src != this)
+        {
+            delete[] m_Data;
+            m_Data = new T[m_Size = src.m_Size];
+            copy(src.m_Data, src.m_Data + src.m_Size, m_Data);
+        }
         return *this;
     }
 };
@@ -68,27 +61,25 @@ public:
 template <typename T>
 class CMatrix3
 {
-private:
-    Array<Array<Array<T>>> mData3D;
+    Array<Array<Array<T>>> m_Data;
 
 public:
-    // constructor ( unsigned n1, unsigned n2, unsigned n3 )
     CMatrix3(unsigned n1, unsigned n2, unsigned n3)
-        : mData3D(n1)
+        : m_Data{n1}
     {
         for (size_t i = 0; i < n1; ++i)
         {
-            mData3D[i] = Array<Array<T>>(n2);
+            m_Data[i] = Array<Array<T>>{n2};
             for (size_t j = 0; j < n2; ++j)
-                mData3D[i][j] = Array<T>(n3);
+                m_Data[i][j] = Array<T>{n3};
         }
     }
 
     ~CMatrix3() = default;
 
-    Array<Array<T>> &operator[](unsigned id)
+    Array<Array<T>> &operator[](size_t index)
     {
-        return mData3D[id];
+        return m_Data[index];
     }
 };
 

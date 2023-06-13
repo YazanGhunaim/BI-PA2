@@ -26,54 +26,45 @@ using namespace std;
 class CTeleport
 {
 private:
-    // connection details of teleport
     struct Connection
     {
-        std::string m_to;
-        unsigned m_departure;
-        unsigned m_arrival;
+        unsigned m_Departure;
+        unsigned m_Arrival;
+        string m_Destination;
 
         Connection() = default;
         ~Connection() = default;
 
-        Connection(const std::string &to, unsigned dep, unsigned arr)
-            : m_to(std::move(to)), m_departure(dep), m_arrival(arr)
+        Connection(unsigned dep, unsigned arr, string des)
+            : m_Departure(dep), m_Arrival(arr), m_Destination(std::move(des))
         {
         }
 
         bool operator<(const Connection &rhs) const
         {
-            return std::tie(m_to, m_departure, m_arrival) < std::tie(rhs.m_to, rhs.m_departure, rhs.m_arrival);
-        }
-
-        void print(std::ostream &os) const
-        {
-            os << "to :" << m_to << " dep :" << m_departure << " arrival :" << m_arrival;
+            return tie(m_Departure, m_Arrival, m_Destination) < tie(rhs.m_Departure, rhs.m_Arrival, rhs.m_Destination);
         }
     };
 
-    // set of connections
     struct Schedule
     {
-        std::set<Connection> m_connections;
+        set<Connection> m_Connections;
 
         Schedule() = default;
         ~Schedule() = default;
 
-        Schedule &insert(const Connection &other)
+        set<Connection> &getConnections()
         {
-            m_connections.emplace(std::move(other));
-            return *this;
+            return m_Connections;
         }
 
-        std::set<Connection> &getSchedule()
+        auto insert(const Connection &other)
         {
-            return m_connections;
+            return m_Connections.insert(std::move(other));
         }
     };
 
-    // city and corresponding teleport schedule
-    std::unordered_map<std::string, Schedule> m_teleports;
+    unordered_map<string, Schedule> m_Table;
 
 public:
     CTeleport() = default;
@@ -81,9 +72,10 @@ public:
 
     CTeleport &Add(const string &from, const string &to, unsigned fromTime, unsigned toTime)
     {
-        m_teleports.emplace(std::move(from), Schedule());
-        auto it = m_teleports.find(from);
-        (it->second).insert(Connection(to, fromTime, toTime));
+        auto it = m_Table.find(from);
+        if (it == m_Table.end())
+            it = m_Table.insert({from, Schedule()}).first;
+        it->second.insert(Connection(fromTime, toTime, to));
         return *this;
     }
 
@@ -97,45 +89,46 @@ public:
         if (from == to)
             return 0;
 
-        // storing best arrival time for each city
-        std::map<std::string, unsigned> best_arrivals;
-        std::queue<std::pair<std::string, unsigned>> queue;
+        map<string, unsigned> bestArrivals;
+        queue<pair<string, unsigned>> queue;
 
-        queue.push(std::make_pair(from, time));
-        best_arrivals.emplace(from, time);
+        bestArrivals.insert({from, time});
+        queue.push(make_pair(from, time));
 
         while (!queue.empty())
         {
-            auto depCity{std::move(queue.front())};
+            auto departureCity = queue.front();
             queue.pop();
 
-            std::string cityName = depCity.first;
-            unsigned actualTime = depCity.second;
+            string cityName = departureCity.first;
+            unsigned actualTime = departureCity.second;
 
-            for (const auto &connection : m_teleports[cityName].getSchedule())
+            if (m_Table.find(cityName) == m_Table.end())
+                continue;
+
+            for (const auto &connection : m_Table.at(cityName).getConnections())
             {
-                // check if we can travel
-                if (actualTime <= connection.m_departure)
+                if (actualTime > connection.m_Departure)
+                    continue;
+
+                auto it = bestArrivals.find(connection.m_Destination);
+                if (it == bestArrivals.end())
                 {
-                    auto check_arrival = best_arrivals.find(connection.m_to);
-                    if (check_arrival == best_arrivals.end())
-                    {
-                        best_arrivals.insert({connection.m_to, connection.m_arrival});
-                    }
-                    
-                    if (check_arrival->second > connection.m_arrival)
-                    {
-                        queue.push(make_pair(connection.m_to, connection.m_arrival));
-                        best_arrivals[connection.m_to] = connection.m_arrival;
-                    }
+                    bestArrivals.insert({connection.m_Destination, connection.m_Arrival});
+                    queue.push(make_pair(connection.m_Destination, connection.m_Arrival));
+                }
+                else if (connection.m_Arrival < it->second)
+                {
+                    bestArrivals[connection.m_Destination] = connection.m_Arrival;
+                    queue.push(make_pair(connection.m_Destination, connection.m_Arrival));
                 }
             }
         }
 
-        auto res = best_arrivals.find(to);
-        if (res == best_arrivals.end())
-            throw invalid_argument("No connection was provided.");
-        return res->second;
+        auto fastest_arrival = bestArrivals.find(to);
+        if (fastest_arrival == bestArrivals.end())
+            throw invalid_argument("No connection was provided");
+        return fastest_arrival->second;
     }
 };
 
