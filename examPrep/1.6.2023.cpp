@@ -16,11 +16,6 @@ using namespace std;
 template <typename T_>
 class CSparseMatrix
 {
-private:
-    size_t m_Rows;
-    size_t m_Cols;
-    vector<pair<size_t, vector<pair<size_t, T_>>>> m_Vec;
-
 public:
     CSparseMatrix(size_t rows, size_t cols)
         : m_Rows(rows), m_Cols(cols)
@@ -30,15 +25,13 @@ public:
     T_ &operator()(size_t row, size_t col)
     {
         if (row >= m_Rows || col >= m_Cols)
-            throw std::out_of_range("Index error");
+            throw out_of_range("Index error");
 
         auto it1 = lower_bound(m_Vec.begin(), m_Vec.end(),
                                make_pair(row, vector<pair<size_t, T_>>{}),
                                [](const pair<size_t, vector<pair<size_t, T_>>> &a,
                                   const pair<size_t, vector<pair<size_t, T_>>> &b)
-                               {
-                                   return a.first < b.first;
-                               });
+                               { return a.first < b.first; });
 
         if (it1 == m_Vec.end() || (*it1).first != row)
             m_Vec.insert(it1, make_pair(row, vector<pair<size_t, T_>>{}));
@@ -47,64 +40,53 @@ public:
                                make_pair(row, vector<pair<size_t, T_>>{}),
                                [](const pair<size_t, vector<pair<size_t, T_>>> &a,
                                   const pair<size_t, vector<pair<size_t, T_>>> &b)
-                               {
-                                   return a.first < b.first;
-                               });
+                               { return a.first < b.first; });
 
-        auto it3 = lower_bound((*it2).second.begin(), (*it2).second.end(),
-                               make_pair(col, T_()),
+        auto it3 = lower_bound((*it2).second.begin(), ((*it2).second.end()),
+                               make_pair(col, T_{}),
                                [](const pair<size_t, T_> &a,
                                   const pair<size_t, T_> &b)
-                               {
-                                   return a.first < b.first;
-                               });
+                               { return a.first < b.first; });
 
         if (it3 == (*it2).second.end() || (*it3).first != col)
-            (*it2).second.insert(it3, make_pair(col, T_()));
+            (*it2).second.insert(it3, make_pair(col, T_{}));
 
-        auto it4 = lower_bound((*it2).second.begin(), (*it2).second.end(),
-                               make_pair(col, T_()),
+        auto it4 = lower_bound((*it2).second.begin(), ((*it2).second.end()),
+                               make_pair(col, T_{}),
                                [](const pair<size_t, T_> &a,
                                   const pair<size_t, T_> &b)
-                               {
-                                   return a.first < b.first;
-                               });
+                               { return a.first < b.first; });
 
         return (*it4).second;
     }
 
-    bool contains(size_t row,
-                  size_t col)
+    bool contains(size_t row, size_t col) const
     {
-        //! Using lower_bound to find a row we need
-        auto it1 = lower_bound(m_Vec.begin(), m_Vec.end(),
-                               make_pair(row, vector<pair<size_t, T_>>{}),
-                               [](const pair<size_t, vector<pair<size_t, T_>>> &a,
-                                  const pair<size_t, vector<pair<size_t, T_>>> &b)
-                               {
-                                   return a.first < b.first;
-                               });
+        auto it = lower_bound(m_Vec.begin(), m_Vec.end(),
+                              make_pair(row, vector<pair<size_t, T_>>{}),
+                              [](const pair<size_t, vector<pair<size_t, T_>>> &a,
+                                 const pair<size_t, vector<pair<size_t, T_>>> &b)
+                              { return a.first < b.first; });
 
-        //! If there is ho such row return false
-        if (it1 == m_Vec.end() || (*it1).first != row)
+        if (it == m_Vec.end() || (*it).first != row)
             return false;
 
-        //! Using lower_bound to find a column we need
-        auto it2 = lower_bound((*it1).second.begin(), (*it1).second.end(),
-                               make_pair(col, T_()),
-                               [](const pair<size_t, T_> &a,
-                                  const pair<size_t, T_> &b)
-                               {
-                                   return a.first < b.first;
-                               });
+        auto it2 = lower_bound((*it).second.begin(), (*it).second.end(),
+                               make_pair(col, T_{}),
+                               [](
+                                   const pair<size_t, T_> &a,
+                                   const pair<size_t, T_> &b)
+                               { return a.first < b.first; });
 
-        //! If there is ho such column return false
-        if (it2 == (*it1).second.end() || (*it2).first != col)
+        if (it2 == (*it).second.end() || (*it2).first != col)
             return false;
-
-        //! If we are here, there is an element of this poisition so return true
         return true;
     }
+
+private:
+    size_t m_Rows;
+    size_t m_Cols;
+    vector<pair<size_t, vector<pair<size_t, T_>>>> m_Vec;
 };
 
 #ifndef __PROGTEST__
