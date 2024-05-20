@@ -18,73 +18,62 @@ private:
     size_t m_size;
 
 public:
-    CArray() : m_data(nullptr), m_size(0) {}
+    CArray()
+        : m_data(nullptr), m_size(0) {}
 
-    explicit CArray(size_t size)
-        : m_size(size)
-    {
-        m_data = new T[m_size];
-    }
+    CArray(size_t size)
+        : m_data(new T[m_size = size]{}) {}
 
-    explicit CArray(const CArray<T> &src)
+    CArray(const CArray<T> &src)
+        : m_data(new T[m_size = src.m_size]{})
     {
-        m_data = new T[m_size = src.m_size];
         copy(src.m_data, src.m_data + src.m_size, m_data);
     }
 
-    CArray<T> &operator=(const CArray<T> &other)
+    CArray &operator=(CArray other)
     {
-        if (this != &other)
-        {
-            delete[] m_data;
-            m_data = new T[m_size = other.m_size];
-            copy(other.m_data, other.m_data + other.m_size, m_data);
-        }
+        swap(m_data, other.m_data);
+        swap(m_size, other.m_size);
         return *this;
-    }
-
-    T operator[](size_t index) const
-    {
-        if (index >= m_size)
-            throw std::out_of_range("Index out of range.");
-        return m_data[index];
-    }
-
-    T &operator[](size_t index)
-    {
-        if (index >= m_size)
-            throw std::out_of_range("Index out of range.");
-        return m_data[index];
     }
 
     ~CArray()
     {
         delete[] m_data;
     }
+
+    T &operator[](size_t idx)
+    {
+        if (idx >= m_size)
+            throw out_of_range("");
+
+        return m_data[idx];
+    }
 };
+
 template <typename T>
 class CMatrix3
 {
 private:
-    CArray<CArray<CArray<T>>> m_data;
+    CArray<CArray<CArray<T>>> m_matrix;
 
 public:
     CMatrix3(unsigned n1, unsigned n2, unsigned n3)
-        : m_data(n1)
+        : m_matrix(n1)
     {
         for (size_t i = 0; i < n1; ++i)
         {
-            m_data[i] = CArray<CArray<T>>(n2);
+            m_matrix[i] = CArray<CArray<T>>(n2);
             for (size_t j = 0; j < n2; ++j)
-                m_data[i][j] = CArray<T>(n3);
+                m_matrix[i][j] = CArray<T>(n3);
         }
     }
 
     ~CMatrix3() = default;
 
-    CArray<CArray<T>> &operator[](size_t index)
+    CArray<CArray<T>> &operator[](size_t idx)
     {
-        return m_data[index];
+        return m_matrix[idx];
     }
 };
 
