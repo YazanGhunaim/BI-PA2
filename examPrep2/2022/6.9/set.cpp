@@ -15,7 +15,7 @@ public:
 
     ~CTree()
     {
-        // TODO
+        delete m_Root;
     }
 
     bool isSet(const string &key)
@@ -49,7 +49,7 @@ public:
                 return false;
         }
 
-        auto newNode = new CNode(key, val);
+        CNode *newNode = new CNode(key, val);
 
         if (m_Last)
             m_Last->m_NextOrder = newNode;
@@ -63,30 +63,25 @@ public:
 
     friend ostream &operator<<(ostream &os, const CTree &src)
     {
-        src.print(os);
-        return os;
-    }
-
-private:
-    void print(ostream &os) const
-    {
-        os << "{";
-
-        CNode *temp = m_First;
+        CNode *node = src.m_First;
 
         bool first = true;
-        while (temp)
+
+        os << "{";
+        while (node)
         {
             if (!first)
                 os << ", ";
 
             first = false;
 
-            os << *temp;
-            temp = temp->m_NextOrder;
-        }
+            node->print(os);
 
+            node = node->m_NextOrder;
+        }
         os << "}";
+
+        return os;
     }
 
 protected:
@@ -95,17 +90,28 @@ protected:
     public:
         CNode(const string &key, const string &val)
             : m_Key(key), m_Val(val) {}
+
+        ~CNode()
+        {
+            delete m_L;
+            delete m_R;
+        }
+
         string m_Key, m_Val;
+
         CNode *m_L = nullptr, *m_R = nullptr;
+
         CNode *m_NextOrder = nullptr;
 
-        friend ostream &operator<<(ostream &os, const CNode &src)
+        void print(ostream &os)
         {
-            return os << src.m_Key << " => " << src.m_Val;
+            os << m_Key << " => " << m_Val;
         }
     };
+
     CNode *m_Root = nullptr;
     CNode *m_First = nullptr, *m_Last = nullptr;
+
     friend int main();
 };
 
@@ -164,5 +170,6 @@ int main(void)
     assert(!t.isSet("PA3"));
     assert(t.isSet("LIN"));
     assert(t.isSet("SAP"));
+
     return 0;
 }
