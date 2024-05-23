@@ -1,0 +1,416 @@
+Network: FIT network
++-Host: 02861414.jjoe.cz
+| +-6.67.153.75
+| +-6.68.246.191
+| +-6.69.47.144
+| +-Memory, 5505 MiB
+| +-Memory, 15428 MiB
+| +-SSD, 3717 GiB
+| | \-[0]: 1853 GiB, omboibpjlwp
+| +-CPU, 12 cores @ 1925MHz
+| \-SSD, 4341 GiB
+|   \-[0]: 580 GiB, iouedbifnljmnusxhrjxptodvybj
++-Host: 08431415.vtxcftfg.cz
+| +-6.70.58.3
+| +-6.71.7.94
+| +-CPU, 3 cores @ 516MHz
+| +-CPU, 3 cores @ 612MHz
+| +-HDD, 1715 GiB
+| | +-[0]: 853 GiB, kcermbfbabvmibmeafxgqcm
+| | \-[1]: 96 GiB, fblswlnyewvrewk
+| +-SSD, 3819 GiB
+| | +-[0]: 632 GiB, pcnwrarpnxscktwnwfjatcwjy
+| | +-[1]: 896 GiB, ukovrlkwovajmyokbfki
+| | +-[2]: 106 GiB, ajkobvqktcm
+| | \-[3]: 606 GiB, lphxneccpgjduloxlfk
+| +-Memory, 1617 MiB
+| +-CPU, 12 cores @ 1954MHz
+| +-CPU, 3 cores @ 1388MHz
+| +-CPU, 10 cores @ 635MHz
+| +-Memory, 11346 MiB
+| +-CPU, 10 cores @ 2994MHz
+| +-CPU, 6 cores @ 1828MHz
+| +-HDD, 4755 GiB
+| | +-[0]: 1203 GiB, jerwbtirlpkspuqqdaiji
+| | \-[1]: 720 GiB, mqtlhjcswwfb
+| +-CPU, 14 cores @ 1228MHz
+| +-Memory, 14251 MiB
+| \-Memory, 1966 MiB
++-Host: 06621416.bfncthqh.cz
+| +-SSD, 2065 GiB
+| | +-[0]: 209 GiB, jxwkrunhjcr
+| | \-[1]: 568 GiB, sgpkvmrshmvfkojrlilxfr
+| +-CPU, 3 cores @ 643MHz
+| +-Memory, 11063 MiB
+| +-SSD, 2716 GiB
+| | +-[0]: 851 GiB, imvwqkwnlevkrwbsgprcvllloxs
+| | \-[1]: 1157 GiB, sxyhbkvvokerjkktsiwhwlrx
+| \-SSD, 3287 GiB
+|   +-[0]: 70 GiB, tlipsxeiekyg
+|   +-[1]: 413 GiB, laqpkxrlpq
+|   +-[2]: 132 GiB, ijcjfsftsxqq
+|   +-[3]: 463 GiB, xesalhkuhq
+|   +-[4]: 87 GiB, gdxgqquvjevnvlklgrgmxhuhep
+|   \-[5]: 380 GiB, wlakandihqjaucuf
++-Host: 08591417.ydhawpibs.cz
+| +-6.72.166.144
+| +-6.73.158.189
+| +-CPU, 8 cores @ 2614MHz
+| +-CPU, 12 cores @ 1922MHz
+| +-SSD, 3223 GiB
+| | +-[0]: 573 GiB, ppqhpktpccasvlxsflhjyqqigfjd
+| | \-[1]: 1461 GiB, qjxashrcvxmtulbyacgtqykqhtibn
+| +-HDD, 1790 GiB
+| | +-[0]: 354 GiB, dwfufcygpeledleae
+| | \-[1]: 858 GiB, mjxoecjbdckyqgufcuaskutrxoib
+| \-HDD, 2659 GiB
+|   \-[0]: 1042 GiB, grhxpunrfiovhktvlcopwluv
++-Host: 07291418.xeslivry.cz
+| +-6.74.133.161
+| +-6.75.57.108
+| +-6.76.131.233
+| +-SSD, 2509 GiB
+| | +-[0]: 200 GiB, caiofrqbxerbmsgsln
+| | +-[1]: 42 GiB, tfobsapecyewpm
+| | +-[2]: 307 GiB, bovgjgfqfplcphfauyxryodswlqxg
+| | +-[3]: 261 GiB, jfgstdclwbqwdxxnueqi
+| | +-[4]: 183 GiB, spwlvcitqkramobnagjjxupvgto
+| | +-[5]: 50 GiB, knirxlfbiwhrmoqyaokaibqkganyf
+| | \-[6]: 171 GiB, pgtrxcfikfiutimrqblq
+| +-CPU, 2 cores @ 1304MHz
+| +-CPU, 14 cores @ 2527MHz
+| +-CPU, 13 cores @ 1481MHz
+| +-Memory, 9184 MiB
+| +-Memory, 2157 MiB
+| +-Memory, 4963 MiB
+| +-Memory, 15061 MiB
+| +-Memory, 15535 MiB
+| +-HDD, 2865 GiB
+| | +-[0]: 1205 GiB, vevqogrdtvmcwygutywlpsgnlncxh
+| | \-[1]: 1029 GiB, eiskjuytcrgqd
+| +-Memory, 8386 MiB
+| +-HDD, 4108 GiB
+| | +-[0]: 426 GiB, usdcgylrucxjsckyyssio
+| | +-[1]: 529 GiB, ffammqxxbenh
+| | +-[2]: 682 GiB, sypyvnrvbabxcq
+| | +-[3]: 305 GiB, qhhdolcojdlrxllrlyftbhsv
+| | +-[4]: 108 GiB, jbswjgxdlwvsach
+| | \-[5]: 134 GiB, fjtwffldqc
+| +-Memory, 6838 MiB
+| +-CPU, 7 cores @ 578MHz
+| \-CPU, 4 cores @ 2396MHz
++-Host: 07611419.bnxlh.cz
+| +-SSD, 3516 GiB
+| | +-[0]: 218 GiB, qveckbmmekkqmyjhfafqbnikqtbg
+| | +-[1]: 62 GiB, fbovsjunrtajijp
+| | +-[2]: 273 GiB, dtfjtuakfshnvdllbyyw
+| | +-[3]: 461 GiB, dbuapixqjbdvubhy
+| | +-[4]: 355 GiB, ohuwwttbxrtyjvvpqluukk
+| | +-[5]: 376 GiB, qavvxwdexsicdrphvevgmse
+| | \-[6]: 325 GiB, pyapcdqfalggdedknuojxiwfdfln
+| +-CPU, 10 cores @ 2062MHz
+| +-SSD, 3580 GiB
+| | +-[0]: 118 GiB, ansxheiqoipxflhaluser
+| | \-[1]: 891 GiB, ahhgjacbjnrsomghlulsptdnndh
+| +-HDD, 3019 GiB
+| | +-[0]: 330 GiB, tgegxigpaygywepjmwuypmmub
+| | \-[1]: 1332 GiB, lphelagdsqdtkdwfmmsprsyefddk
+| \-Memory, 8050 MiB
++-Host: 06911420.xjqbddnkn.cz
+| +-6.77.184.1
+| +-6.78.103.71
+| +-6.79.7.147
+| +-HDD, 2948 GiB
+| | +-[0]: 822 GiB, ivcijrkqxqroyqkucahghs
+| | +-[1]: 755 GiB, prtxgxvgqoyxxdpv
+| | \-[2]: 778 GiB, kjnunfbeixvyfki
+| +-CPU, 11 cores @ 1337MHz
+| +-HDD, 4912 GiB
+| | +-[0]: 230 GiB, fayhjpyreoejbyivpjaqe
+| | +-[1]: 689 GiB, nycmatdkukfffvegnhqdhaysrcyy
+| | +-[2]: 232 GiB, ssjesgqslniqdckwfgpqxynqynxhl
+| | +-[3]: 485 GiB, thbcooogwlemnxfxggyspye
+| | +-[4]: 222 GiB, hocivmjqtqx
+| | +-[5]: 269 GiB, phdmyhappfxrdpwuougagycuupg
+| | \-[6]: 523 GiB, kyuuipwqmgsqqxkqqkovpy
+| +-SSD, 2634 GiB
+| | +-[0]: 70 GiB, kyftcnhuupdwfmftw
+| | +-[1]: 212 GiB, cufhsrawvjsydgsjijfkqtcgng
+| | +-[2]: 176 GiB, thelomlqpcxqxqxnhnivwntpan
+| | +-[3]: 160 GiB, asblkeovjyvv
+| | +-[4]: 138 GiB, ylwfertofhxpfax
+| | +-[5]: 119 GiB, jlytfqupluqemqlkeagoev
+| | \-[6]: 282 GiB, jnbfnupixabyn
+| \-SSD, 1202 GiB
+|   +-[0]: 132 GiB, xoyifahebtahkniq
+|   +-[1]: 160 GiB, meivipqjoqve
+|   +-[2]: 139 GiB, mnyqejytuixpfdqpeikdagcgfu
+|   +-[3]: 71 GiB, bcgchlsjunfdwbtmwsgumay
+|   +-[4]: 127 GiB, nqxseaaxfmxftps
+|   \-[5]: 12 GiB, fpiydjsitabexxxvpmcgq
++-Host: 02601421.ewcejkg.cz
+| +-6.80.114.234
+| +-6.81.18.200
+| +-6.82.157.161
+| +-CPU, 15 cores @ 559MHz
+| +-Memory, 6155 MiB
+| +-CPU, 11 cores @ 905MHz
+| +-SSD, 4844 GiB
+| | +-[0]: 1623 GiB, prvvwwhsfyevqtwbrsmrsw
+| | \-[1]: 558 GiB, ejyimcasvanyisbgbisiovsxro
+| +-CPU, 13 cores @ 686MHz
+| +-SSD, 2430 GiB
+| | +-[0]: 56 GiB, sccpcplsbxuxoxtoifdyn
+| | +-[1]: 387 GiB, etvuosvadtqum
+| | \-[2]: 388 GiB, btohcttwhbuekrnyymbd
+| +-SSD, 4675 GiB
+| | +-[0]: 192 GiB, dmrjdglinkoxcleiovgsrubdvcqu
+| | +-[1]: 96 GiB, yoqpbgbcdoxuabngjregvc
+| | \-[2]: 206 GiB, maxvyruvofxsfveylltfpqpnnc
+| +-Memory, 11998 MiB
+| +-Memory, 15083 MiB
+| +-Memory, 10833 MiB
+| +-Memory, 2073 MiB
+| +-SSD, 3039 GiB
+| | +-[0]: 837 GiB, vhkyfrootjont
+| | +-[1]: 60 GiB, vfobuymauqshlxteagowo
+| | \-[2]: 187 GiB, ljopjcpnkvgyxmuxgfaqqxtjn
+| +-Memory, 8175 MiB
+| +-Memory, 16288 MiB
+| \-CPU, 1 cores @ 1517MHz
++-Host: 07731422.vqntjmkpd.cz
+| +-6.83.213.35
+| +-Memory, 10042 MiB
+| +-Memory, 8022 MiB
+| +-Memory, 7951 MiB
+| +-CPU, 5 cores @ 2804MHz
+| \-CPU, 8 cores @ 2981MHz
++-Host: 02031423.etwd.cz
+| +-6.84.140.245
+| +-6.85.82.48
+| +-6.86.6.34
+| +-SSD, 3748 GiB
+| | +-[0]: 116 GiB, jaamvvhsoxpok
+| | +-[1]: 602 GiB, hneehvmvymsqb
+| | +-[2]: 622 GiB, jndvrejxnissxsrlwuddgfm
+| | +-[3]: 748 GiB, kkognvbdwntduvkcjnhfjbawjeo
+| | \-[4]: 101 GiB, nnfaqdvsobotfervpjpgipjyk
+| +-CPU, 8 cores @ 754MHz
+| +-HDD, 1362 GiB
+| | +-[0]: 321 GiB, pfsbvedtytbtvcqjodeolarskpdpj
+| | +-[1]: 233 GiB, mqwwnsibspiha
+| | +-[2]: 105 GiB, rrsmadhgbkcxqcdo
+| | \-[3]: 256 GiB, hurpdxcdutvsiturrqcijpqlrdrjb
+| +-HDD, 2475 GiB
+| | +-[0]: 615 GiB, cvoiyuyfagmjd
+| | +-[1]: 258 GiB, mumdybueif
+| | +-[2]: 190 GiB, psenvofvsfqrydiuy
+| | \-[3]: 356 GiB, lyxwtcenklogcsgsltwypwxu
+| \-Memory, 9166 MiB
++-Host: 02861424.qunjccped.cz
+| +-6.87.231.94
+| +-HDD, 2272 GiB
+| | +-[0]: 478 GiB, muhxkevuasvrnsewf
+| | \-[1]: 134 GiB, hrhoeokhjbwdqjriau
+| +-Memory, 16160 MiB
+| +-CPU, 7 cores @ 1103MHz
+| +-Memory, 691 MiB
+| +-CPU, 11 cores @ 1580MHz
+| +-CPU, 2 cores @ 2826MHz
+| +-Memory, 16112 MiB
+| +-HDD, 2883 GiB
+| | +-[0]: 63 GiB, ulovvtvxqjdlyarc
+| | +-[1]: 623 GiB, kxvxjybocdxsymtytqprdavunsve
+| | +-[2]: 504 GiB, euwflwdvuawbakhbqpkxmjbqvi
+| | \-[3]: 563 GiB, gkjtmfxrfapeoidxssafixolo
+| +-CPU, 10 cores @ 1295MHz
+| +-HDD, 2661 GiB
+| | +-[0]: 581 GiB, luwunmktaeviyvrtg
+| | +-[1]: 217 GiB, qrpsvbflhegkvgodlituydwqrig
+| | \-[2]: 382 GiB, iwxaddbafjhw
+| +-CPU, 7 cores @ 598MHz
+| +-CPU, 14 cores @ 733MHz
+| +-Memory, 15348 MiB
+| +-Memory, 8060 MiB
+| \-HDD, 1830 GiB
+|   +-[0]: 71 GiB, lkrlfxdvgaxv
+|   +-[1]: 22 GiB, llxifafjlalxxrlvd
+|   +-[2]: 211 GiB, mkqorfsnvrbkapfbm
+|   +-[3]: 160 GiB, pwyyhgsoswvqmvagtnwyblbsgbn
+|   +-[4]: 104 GiB, xpyhddgvisyirmhxgf
+|   +-[5]: 227 GiB, lbrrcjaocbivqxfsygkr
+|   \-[6]: 22 GiB, qspoaxmqxwovorfqmlqfayreaber
++-Host: 01691425.vbjrtq.cz
+| +-6.88.216.14
+| +-6.89.224.140
+| +-6.90.91.110
+| +-6.91.121.47
+| +-SSD, 1540 GiB
+| | +-[0]: 173 GiB, pvbxsmugulyxidomhmdoslfoyk
+| | +-[1]: 124 GiB, tdsfkhyuio
+| | +-[2]: 190 GiB, dxkdccncnxfmamyefesgfjc
+| | +-[3]: 157 GiB, fmornjliqfdhdlki
+| | +-[4]: 132 GiB, mbfopbmnmk
+| | +-[5]: 79 GiB, ahhjguusjudehomtealmthequ
+| | \-[6]: 198 GiB, xkycgttrhamhnamguvkb
+| +-SSD, 4083 GiB
+| | +-[0]: 735 GiB, opwocoabctffj
+| | +-[1]: 219 GiB, faimnfcikxymnyj
+| | +-[2]: 536 GiB, igtugjmauwdfunesl
+| | \-[3]: 293 GiB, nomtdcgwcwkorh
+| +-SSD, 2496 GiB
+| | +-[0]: 159 GiB, tjwjggvrtboqtqovgadxtvonb
+| | +-[1]: 397 GiB, bojfwpehxkqinjiklnnvylb
+| | +-[2]: 322 GiB, ydupwxaspbiystokjdwugwifgnl
+| | +-[3]: 200 GiB, rrhhieknwmeqgp
+| | \-[4]: 437 GiB, xlustodoedljnnlnuul
+| +-HDD, 2919 GiB
+| | \-[0]: 2484 GiB, rygfenkojvjgjasvoebss
+| \-Memory, 11652 MiB
++-Host: 05371426.eucl.cz
+| +-CPU, 1 cores @ 2334MHz
+| +-Memory, 6462 MiB
+| +-HDD, 4510 GiB
+| | +-[0]: 310 GiB, defmlughvvodvucsqhpffc
+| | +-[1]: 164 GiB, kkkteeqoyga
+| | \-[2]: 1075 GiB, pdttvlxawud
+| +-CPU, 4 cores @ 2026MHz
+| \-CPU, 8 cores @ 2422MHz
++-Host: 06181427.fascxaq.cz
+| +-6.92.60.186
+| +-6.93.92.198
+| +-HDD, 1519 GiB
+| | +-[0]: 201 GiB, plemdbdpufbpfinghvrqxjfsp
+| | +-[1]: 112 GiB, vlggfxsxpwfxxvsfgy
+| | +-[2]: 89 GiB, urfbsoempfqwajxoxhctuyr
+| | +-[3]: 52 GiB, klwrguxqqkaktckjeukvsqbtxjkc
+| | +-[4]: 183 GiB, joxlwgawugukvqoktvssctj
+| | \-[5]: 199 GiB, xrymtrlwvfbljkvxpaevxjmhrc
+| +-SSD, 2285 GiB
+| | +-[0]: 282 GiB, cpsrnbjgdknexslmvpgtewjhytht
+| | +-[1]: 89 GiB, bnxyxfgjewdblovmukaytseouthva
+| | \-[2]: 55 GiB, konmlmbvpnaenbktvuxc
+| +-CPU, 11 cores @ 2930MHz
+| +-CPU, 14 cores @ 1646MHz
+| \-SSD, 3730 GiB
+|   +-[0]: 828 GiB, gvjoamtanaoqjqsrrbhcntqbr
+|   \-[1]: 36 GiB, xncqkowtney
++-Host: 01521428.oawwq.cz
+| +-6.94.33.90
+| +-6.95.214.118
+| +-Memory, 16220 MiB
+| +-Memory, 3487 MiB
+| +-CPU, 2 cores @ 1977MHz
+| +-CPU, 11 cores @ 2617MHz
+| \-CPU, 6 cores @ 1317MHz
++-Host: 03031429.jbry.cz
+| +-6.96.215.80
+| +-CPU, 1 cores @ 1152MHz
+| +-Memory, 10544 MiB
+| +-HDD, 3939 GiB
+| | +-[0]: 17 GiB, rulbqiufajjsjnqaeohe
+| | +-[1]: 204 GiB, nlvvdbpdqgjhsrgncxjoxqnkx
+| | +-[2]: 721 GiB, dpoqtsnrckavbsdimofnfqondepi
+| | +-[3]: 103 GiB, hplvopuulliwfurogdlb
+| | \-[4]: 472 GiB, uccykmsgbqsxnciv
+| +-SSD, 1690 GiB
+| | +-[0]: 39 GiB, cbmaympmsikcpmondsfnk
+| | +-[1]: 143 GiB, lukuhvhedcprmndmc
+| | +-[2]: 225 GiB, cqdpnthlrtkrhu
+| | \-[3]: 135 GiB, ygcluhayyeruap
+| \-Memory, 1242 MiB
++-Host: 07481430.iycdrymni.cz
+| +-6.97.42.245
+| +-6.98.44.80
+| +-6.99.99.206
+| +-HDD, 1792 GiB
+| | +-[0]: 330 GiB, cncxdwxkoxikgixryayx
+| | +-[1]: 96 GiB, ibxuyyrbbgmdxbwoceocfqohycsh
+| | +-[2]: 22 GiB, fqddsnaoyxiiiaig
+| | +-[3]: 28 GiB, uvarcmqmmseejdvduutswytwhr
+| | \-[4]: 62 GiB, njxufslbwhgcmmenshfb
+| +-Memory, 15536 MiB
+| +-Memory, 2544 MiB
+| +-CPU, 5 cores @ 2095MHz
+| \-HDD, 2026 GiB
+|   \-[0]: 1129 GiB, eooicxahpwotwruxmwmx
++-Host: 04231431.jedgvio.cz
+| +-6.100.82.79
+| +-6.101.159.133
+| +-6.102.39.142
+| +-CPU, 7 cores @ 1752MHz
+| +-SSD, 4789 GiB
+| | +-[0]: 154 GiB, khmiuceylaqshhndbru
+| | +-[1]: 1191 GiB, bkptcbpbjtohkhtoi
+| | \-[2]: 620 GiB, eaelpwxgcvb
+| +-CPU, 9 cores @ 1439MHz
+| +-Memory, 1357 MiB
+| +-HDD, 2447 GiB
+| | +-[0]: 1144 GiB, nrsnlbitqojcjjwxsaa
+| | \-[1]: 954 GiB, kguwirmlwd
+| +-CPU, 3 cores @ 2807MHz
+| +-SSD, 4942 GiB
+| | +-[0]: 142 GiB, vklsaluulohk
+| | +-[1]: 277 GiB, jhlnuwfktalitdixlylugm
+| | +-[2]: 216 GiB, neurhphmovetrvvgvkkpwtfaj
+| | +-[3]: 269 GiB, tlcgvgccoggijvwtydoxsu
+| | +-[4]: 296 GiB, uylwgqgvcb
+| | +-[5]: 45 GiB, foaxmwjgpavt
+| | \-[6]: 621 GiB, yypyaccqvlpaqmyvmmygvsjsqii
+| +-CPU, 3 cores @ 966MHz
+| +-SSD, 3248 GiB
+| | +-[0]: 675 GiB, lbelbolbljkpxuog
+| | +-[1]: 435 GiB, gesavdpbaemslh
+| | \-[2]: 379 GiB, ewlwrrwuogtobgupxofmnablkokxe
+| +-SSD, 2546 GiB
+| | +-[0]: 937 GiB, drqblvkmgf
+| | \-[1]: 304 GiB, sttsbottujwyeanghuj
+| +-CPU, 15 cores @ 622MHz
+| +-HDD, 2630 GiB
+| | +-[0]: 235 GiB, hwmovxucdlfdg
+| | +-[1]: 113 GiB, htwlqtalqsgatjfeyqrhsgb
+| | +-[2]: 323 GiB, pmhevnwutmppnyxgfqfnjw
+| | +-[3]: 127 GiB, almcegkyrbcbeth
+| | +-[4]: 177 GiB, hbxhplflftlnsjlnoeggnsxjwkmbp
+| | +-[5]: 162 GiB, knmdhxjinmx
+| | \-[6]: 251 GiB, airjvlxqrmdx
+| +-Memory, 5450 MiB
+| +-CPU, 4 cores @ 1055MHz
+| \-Memory, 6808 MiB
++-Host: 08391432.dnete.cz
+| +-6.103.181.194
+| +-SSD, 1251 GiB
+| | +-[0]: 180 GiB, bxxqrcsjkgwm
+| | +-[1]: 161 GiB, bnoljojqqqsjnf
+| | +-[2]: 69 GiB, wmbmyvhfuiheqfkhte
+| | +-[3]: 167 GiB, ugtacjsavdolo
+| | +-[4]: 27 GiB, cgurntvjfjuaowmnjnqchvsa
+| | \-[5]: 191 GiB, cnyfalumtrewydev
+| +-Memory, 15470 MiB
+| +-CPU, 12 cores @ 1917MHz
+| +-Memory, 7480 MiB
+| \-SSD, 3842 GiB
+|   +-[0]: 339 GiB, jiqwmbcehdgsod
+|   +-[1]: 29 GiB, gpxmauhkwcgtjvjuix
+|   +-[2]: 103 GiB, eweebwseumkkqbohcegsupvin
+|   +-[3]: 387 GiB, ubbqyewtikixshikeedlimoyxu
+|   +-[4]: 152 GiB, ncslabmvermtjoabgovblksxvsya
+|   +-[5]: 324 GiB, euhtghsarvxglfipl
+|   \-[6]: 45 GiB, bygvqpjhbvfhjefw
+\-Host: 07111433.ibxoa.cz
+  +-6.104.34.10
+  +-SSD, 2174 GiB
+  | +-[0]: 248 GiB, cfruaitctsvbqvtufekwc
+  | +-[1]: 299 GiB, igjymgfsjebmjghfvkchshcg
+  | +-[2]: 146 GiB, tgeqykivepa
+  | +-[3]: 214 GiB, qbuetokkjjwa
+  | +-[4]: 294 GiB, gkifhtlaptbekeytdw
+  | \-[5]: 94 GiB, omihswgdceyryywubmajkffqp
+  +-SSD, 4981 GiB
+  | +-[0]: 927 GiB, lpravpevsogggymjsjgnknnlqrjeq
+  | +-[1]: 572 GiB, sthvarptlqgcwwvjlhvapd
+  | +-[2]: 617 GiB, lgdiigmxufcuoyecmo
+  | \-[3]: 546 GiB, nxfhtvxmjyrdwwoxrlkdbxjgpnfw
+  +-CPU, 10 cores @ 1420MHz
+  +-CPU, 3 cores @ 2651MHz
+  \-Memory, 8095 MiB
